@@ -1,0 +1,45 @@
+/* RifaFacil Styles */
+
+/* Remove default app styles */
+.App-logo {
+    height: 40vmin;
+    pointer-events: none;
+}
+
+.App-header {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+}
+
+.App-link {
+    color: #F97316;
+}
+
+/* Native app safe areas */
+.native-app {
+    padding-top: var(--safe-area-inset-top, 0px);
+    padding-bottom: var(--safe-area-inset-bottom, 0px);
+    padding-left: var(--safe-area-inset-left, 0px);
+    padding-right: var(--safe-area-inset-right, 0px);
+}
+
+/* iOS specific styles */
+@supports (-webkit-touch-callout: none) {
+    .native-app {
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* Hide scrollbar on mobile */
+.native-app::-webkit-scrollbar {
+    display: none;
+}
+
+.native-app {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

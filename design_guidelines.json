@@ -1,0 +1,138 @@
+{
+  "identity": {
+    "name": "RifaFacil (E1 Design)",
+    "description": "A vibrant, trustworthy, and simple raffle platform for everyone.",
+    "persona_tone": "Exciting, Trustworthy, Celebratory, Simple",
+    "theme_mode": "light",
+    "design_principles": [
+      "Fusion over Imitation: Mix Festive Energy with Swiss Precision",
+      "Emotion First: Evoke the thrill of winning and the ease of organizing",
+      "Content is King: Highlight the Prizes and the Winners",
+      "Negative Space: Use white space to build trust",
+      "Contrast: High contrast CTAs against clean backgrounds"
+    ]
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["500", "700"],
+      "usage": "Use for all headings (H1-H6). Tight tracking (-0.02em)."
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "weights": ["400", "500", "700"],
+      "usage": "Use for paragraphs, UI text, and data."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Use for ticket numbers and transaction IDs."
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#F97316",
+        "foreground": "#FFFFFF",
+        "hover": "#EA580C"
+      },
+      "secondary": {
+        "DEFAULT": "#0F172A",
+        "foreground": "#FFFFFF"
+      },
+      "accent": {
+        "DEFAULT": "#FACC15",
+        "foreground": "#0F172A"
+      },
+      "success": {
+        "DEFAULT": "#34D399",
+        "foreground": "#064E3B"
+      },
+      "background": {
+        "DEFAULT": "#FFFFFF",
+        "subtle": "#F8FAFC"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#475569",
+        "muted": "#94A3B8"
+      },
+      "border": {
+        "DEFAULT": "#E2E8F0",
+        "focus": "#F97316"
+      }
+    },
+    "usage_rules": [
+      "NEVER use generic SaaS blue.",
+      "Use Electric Orange (#F97316) for Primary CTAs only.",
+      "Use Deep Navy (#0F172A) for headers and heavy structural elements.",
+      "Use Sunshine Yellow (#FACC15) sparingly for 'Winner' or 'Premium' badges.",
+      "Backgrounds should be mostly White (#FFFFFF) or very subtle Gray (#F8FAFC)."
+    ]
+  },
+  "layout": {
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "grid_system": {
+      "landing": "Use the 'Tetris' Asymmetrical Grid. Mix 12-col spans: 8+4, 6+6, 5+7.",
+      "dashboard": "Use the 'Bento' High Density Grid. Clean rectangular cards.",
+      "spacing": "Generous. Use p-8 to p-12 for sections. Gap-6 to Gap-8 for grids."
+    },
+    "radius": {
+      "default": "rounded-xl",
+      "button": "rounded-full",
+      "card": "rounded-xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold px-8 py-3 transition-transform hover:-translate-y-0.5",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-full font-medium px-6 py-2",
+      "outline": "border-2 border-slate-200 text-slate-700 hover:border-slate-900 hover:text-slate-900 rounded-full font-medium"
+    },
+    "cards": {
+      "style": "bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200",
+      "dashboard": "p-6 flex flex-col justify-between h-full"
+    },
+    "inputs": {
+      "style": "rounded-lg border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "shadow-[0_2px_8px_rgba(15,23,42,0.08)]",
+    "gradients": "Use subtle noise overlays or very faint mesh gradients (Orange/Yellow/White) for hero backgrounds.",
+    "textures": "Add a subtle 'noise' SVG overlay to the background-subtle to reduce flatness.",
+    "motion": {
+      "entrance": "fade-in-up (opacity: 0 -> 1, y: 20 -> 0)",
+      "hover": "scale-105 for cards, -translate-y-1 for buttons"
+    }
+  },
+  "image_urls": {
+    "hero_crowd": {
+      "url": "https://images.unsplash.com/photo-1694626007251-8dd2cd25b89c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwzfHxoYXBweSUyMHBlb3BsZSUyMGNlbGVicmF0aW5nJTIwd2lubmluZyUyMGxvdHRlcnklMjBjb25mZXR0aXxlbnwwfHx8fDE3NzEzNzkxNTB8MA&ixlib=rb-4.1.0&q=85",
+      "description": "A crowd of people celebrating with confetti - Use for Hero Section background or main visual"
+    },
+    "feature_office": {
+      "url": "https://images.unsplash.com/photo-1760278041797-2a21a385f17c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBjbGVhbiUyMGhvbWUlMjBvZmZpY2UlMjBkZXNrJTIwc2V0dXB8ZW58MHx8fHwxNzcxMzc5MTUyfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern home office - Use for 'Organizer' dashboard features"
+    },
+    "ticket_holding": {
+      "url": "https://images.pexels.com/photos/27639885/pexels-photo-27639885.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Hand holding raffle tickets - Use for 'Buy Ticket' flow or 'My Tickets' section"
+    },
+    "celebration_confetti": {
+      "url": "https://images.unsplash.com/photo-1544155893-127ecf7c18a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwxfHxoYXBweSUyMHBlb3BsZSUyMGNlbGVicmF0aW5nJTIwd2lubmluZyUyMGxvdHRlcnklMjBjb25mZXR0aXxlbnwwfHx8fDE3NzEzNzkxNTB8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Woman celebrating with confetti - Use for 'Winners' section"
+    }
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5px or 2px. Rounded caps."
+  },
+  "universal_guidelines": [
+    "Do NOT use gradients for text or heavy backgrounds. Keep it clean.",
+    "Do NOT center align the app container.",
+    "Interactive elements MUST have data-testid attributes.",
+    "Use 'sonner' for toasts.",
+    "Mobile images max-h-[80vh]."
+  ],
+  "instructions_to_main_agent": "Implement the 'Vibrant Play' theme. Use the provided image URLs for their respective sections. Focus on the 'Dual System' aspect in the dashboard (Organizer vs Participant view). Use the 'Tetris' grid for the landing page to make it stand out."
+}

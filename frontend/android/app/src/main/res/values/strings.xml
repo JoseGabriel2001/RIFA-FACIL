@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RifaFacil</string>
+    <string name="title_activity_main">RifaFacil</string>
+    <string name="package_name">com.rifafacil.app</string>
+    <string name="custom_url_scheme">com.rifafacil.app</string>
+</resources>

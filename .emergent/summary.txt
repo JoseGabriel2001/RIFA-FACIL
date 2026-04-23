@@ -1,0 +1,190 @@
+<analysis>**original_problem_statement:**
+El usuario quiere crear una aplicación web para realizar sorteos y rifas.
+
+**Requisitos del Producto (PRODUCT REQUIREMENTS):**
+1.  **Administración de Sorteos:**
+    *   Crear sorteos, definir el número de boletos y el precio.
+    *   Permitir la exclusión de números específicos.
+    *   Asignar un ganador de forma predeterminada, pero mostrando una animación de ruleta que aterrice en el número elegido.
+2.  **Interfaz de Usuario:**
+    *   Una landing page que muestre los sorteos activos.
+    *   Proceso de compra de boletos para los usuarios.
+    *   Página para consultar los resultados de los sorteos.
+    *   Un enlace único para compartir cada sorteo.
+3.  **Funcionalidades Adicionales Implementadas/Solicitadas:**
+    *   **Cuentas de Usuario:** Sistema de registro e inicio de sesión (JWT y Google Auth). Los usuarios pueden crear y participar en rifas.
+    *   **Planes de Suscripción:** Un plan gratuito (hasta 2 rifas activas) y un plan de pago (rifas ilimitadas). El usuario  es súper administrador sin restricciones.
+    *   **Métodos de Pago:** Integración con Stripe, PayPal (pendientes) y un sistema de pago en efectivo (implementado).
+    *   **Pago en Efectivo:** Los usuarios pueden reservar boletos, generando una orden pendiente. El administrador debe aprobar la orden manualmente. Las órdenes no pagadas en 48 horas expiran.
+    *   **Asignación de Boletos:** El administrador puede asignar boletos directamente.
+    *   **Sorteo con Ruleta Multi-giro:** Una ruleta animada con sonido. El administrador configura el número de giros, y se debe presionar el botón de girar esa cantidad de veces para revelar al ganador.
+    *   **Imagen del Premio:** Permitir subir una imagen real del premio.
+    *   **Modo Presentación:** Una vista a pantalla completa para la ruleta, ideal para eventos en vivo.
+    *   **App Móvil:** El proyecto está configurado con Capacitor para generar apps para iOS y Android.
+    *   **Notificaciones por Email:** Integración con Resend para notificar al ganador y en otras acciones.
+
+**User's preferred language**: Spanish
+
+**what currently exists?**
+Se ha desarrollado una aplicación full-stack (React + FastAPI + MongoDB) que cumple con la mayoría de los requisitos. Cuenta con autenticación dual (JWT y Google Auth en progreso), gestión completa de rifas (creación, preselección secreta de ganadores, sistema de giros múltiples), un Modo Presentación para la ruleta y un flujo de pago en efectivo. Se ha integrado Resend para notificaciones por email y se ha configurado el proyecto con Capacitor para su conversión a app móvil. Se han corregido varios bugs relacionados con el flujo de giros y la interfaz de usuario.
+
+**Last working item**:
+*   **Last item agent was working:** El agente estaba implementando el inicio de sesión con Google (Emergent Google Auth). Se crearon los endpoints de backend (, ), el componente de frontend para el callback (), el botón de inicio de sesión () y se actualizaron las rutas principales () y las páginas de login/registro. El último paso pendiente era modificar el contexto de autenticación para manejar el estado de sesión del usuario después del callback de Google.
+*   **Status:** IN PROGRESS
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** both
+*   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+*   **Issue 1:** Completar la integración de Google Sign-In (P0)
+*   **Issue 2:** Implementar la lógica de los planes de suscripción (P1)
+
+**Issues Detail:**
+*   **Issue 1:**
+    *   **Description:** La integración del inicio de sesión con Google está incompleta. El flujo de backend y los componentes de UI están creados, pero el estado de la aplicación en el frontend no se actualiza después de que el usuario se autentica con Google.
+    *   **Attempted fixes:** Se crearon todos los archivos y endpoints necesarios. La implementación se detuvo justo antes de actualizar el .
+    *   **Next debug checklist:**
+        1.  Revisar .
+        2.  Añadir una función o modificar la existente para que acepte directamente el token y los datos del usuario devueltos por el endpoint .
+        3.  Esta función debe guardar el token en  y actualizar el estado del contexto (, ).
+        4.  Asegurarse de que el componente  llame a esta nueva función del contexto.
+        5.  Realizar una prueba completa del flujo: Click en Iniciar sesión con Google -> Autenticación -> Redirección y login exitoso en la app.
+    *   **Status:** IN PROGRESS
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** both
+    *   **Blocked on other issue:** No
+
+*   **Issue 2:**
+    *   **Description:** La lógica para limitar el número de rifas en el plan gratuito no está implementada. Los usuarios con el plan free no deberían poder crear más de 2 rifas activas. Actualmente, solo el súper administrador puede crear rifas ilimitadas, pero no hay ninguna restricción para los usuarios normales.
+    *   **Attempted fixes:** Se añadió un campo  al modelo de usuario para el solicitante. La lógica de restricción general no se ha abordado.
+    *   **Next debug checklist:**
+        1.  Modificar el endpoint de creación de rifas () en .
+        2.  Antes de crear la rifa, verificar si el usuario . Si no lo es, contar sus rifas con  active.
+        3.  Si el conteo es >= 2, devolver un error 403 (Forbidden) con un mensaje claro.
+        4.  En el frontend (), capturar este error y mostrar una notificación al usuario, sugiriendo que actualice su plan.
+    *   **Status:** NOT STARTED
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** both
+    *   **Blocked on other issue:** No
+
+**In progress Task List**:
+*   **Task 1:** Completar la integración de Google Sign-In (P0)
+    *   **Where to resume:** Modificar el archivo  para manejar correctamente el login después del callback de Google.
+    *   **What will be achieved with this?** Los usuarios podrán registrarse e iniciar sesión en la aplicación utilizando sus cuentas de Google.
+    *   **Status:** IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?** both
+    *   **Blocked on something:** No
+
+**Upcoming and Future Tasks**
+*   **Upcoming Tasks:**
+    *   **P1: Implementar Lógica de Planes de Suscripción:** Finalizar el Issue 2 para restringir a los usuarios del plan gratuito a 2 rifas activas.
+*   **Future Tasks:**
+    *   **P2: Implementación Completa de Pagos (Stripe/PayPal):** Integrar los flujos de pago para que los usuarios puedan actualizar a un plan de pago.
+    *   **P2: Integración con WhatsApp:** Solicitada por el usuario pero pospuesta. Para notificar al ganador.
+    *   **P3: Refactorización del Backend:** Dividir el archivo monolítico  en una estructura de módulos (routers, models, services) para mejorar la mantenibilidad.
+
+**Completed work in this session**
+- **Recently completed:**
+    - Implementación de preselección secreta del ganador de la rifa.
+    - Implementación de la lógica de múltiples giros para la ruleta.
+    - Creación de un Modo Presentación a pantalla completa para la ruleta.
+    - Configuración del proyecto con Capacitor para permitir la generación de apps móviles.
+    - Integración de Resend para el envío de notificaciones por email con plantillas HTML.
+    - Corrección de un bug que impedía continuar con los giros en el modo presentación.
+    - Corrección del fallo en la función Copiar enlace en entornos restrictivos.
+    - Cambio del color de los boletos vendidos a rojo para mayor visibilidad.
+    - Inicio de la integración de Iniciar Sesión con Google.
+
+**Earlier issues found/mentioned but not fixed**
+*   Ninguno que no esté ya listado en las secciones de tareas pendientes.
+
+**Known issue recurrence from previous fork**
+*   None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+*   **Frontend:** React, Tailwind CSS, shadcn/ui, Axios, react-router-dom, Capacitor.
+*   **Backend:** FastAPI, Python, MongoDB (con Motor), Resend.
+*   **Authentication:** JWT (JSON Web Tokens), Emergent Google Auth (OAuth).
+
+**key DB schema**
+*   **users:** 
+*   **raffles:** 
+*   **tickets:** 
+*   **orders:** 
+
+**changes in tech stack**
+*   **Capacitor:** Añadido para la conversión a aplicación móvil.
+*   **Resend:** Añadido para el envío de emails transaccionales.
+
+**All files of reference**
+*   : Lógica principal del backend (modificado extensamente).
+*   : **Archivo clave para el próximo paso.**
+*   : **Archivo clave para el próximo paso.**
+*   : Página de administración de rifas (modificada extensamente).
+*   : Nuevo componente para el modo presentación.
+*   : Nuevo helper para copiar al portapapeles.
+*   : Nueva guía de despliegue de la app móvil para el usuario.
+*   : Requerimientos del producto (actualizado).
+
+**Areas that need refactoring**:
+*   El archivo  es monolítico y debería ser descompuesto en una arquitectura de varios archivos (routers, modelos, etc.).
+*   El componente  se ha vuelto muy grande y complejo; podría beneficiarse de ser dividido en componentes más pequeños y manejables.
+
+**key api endpoints**
+*   : Inicia el flujo de autenticación de Google.
+*   : Endpoint de callback para procesar la respuesta de Google.
+*   : Guarda el ganador preseleccionado de forma secreta.
+*   : Ejecuta un giro de la ruleta.
+*   : Asigna privilegios de súper administrador a un usuario.
+
+**Critical Info for New Agent**
+*   La prioridad inmediata es finalizar la integración de Google Sign-In, enfocándose en .
+*   El usuario  es un súper administrador, lo que significa que se salta todas las restricciones de planes. Al probar las limitaciones del plan gratuito, debes usar o crear una cuenta de usuario regular.
+*   La integración de Resend está en modo de prueba y solo puede enviar correos a la dirección verificada del usuario (). Esto ya se le ha explicado al usuario.
+*   La configuración de la app móvil con Capacitor está hecha. La compilación y publicación en las tiendas de aplicaciones es responsabilidad del usuario, siguiendo la guía . No se requieren más acciones por parte del agente en este aspecto a menos que se solicite.
+
+**documents and test reports created in this job**
+*   
+*   
+*    (múltiples reportes generados)
+*   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:** Pide agregar inicio de sesión con Google. (Status: In Progress)
+2.  **User:** Reporta que el color de la leyenda en la página pública de la rifa está incorrecto. (Status: Completed)
+3.  **User:** Pide cambiar el color de los boletos vendidos a rojo. (Status: Completed)
+4.  **User:** Reporta que el botón para copiar el enlace de la rifa no funciona. (Status: Completed)
+5.  **User:** Reporta que en el modo presentación, el botón de girar desaparece después del primer giro. (Status: Completed)
+6.  **User:** Proporciona la API Key de Resend. (Status: Completed)
+7.  **User:** Pide implementar el Modo Presentación, agregar integración con WhatsApp y convertir la app a móvil. (Status: Partially Completed - Modo Presentación y Capacitor listos, WhatsApp pospuesto).
+8.  **User:** Aclara que prefiere la opción de app nativa con Capacitor y pospone la integración de WhatsApp. (Status: Acknowledged).
+9.  **User:** Reporta que la lógica de giros múltiples no funciona como esperaba. (Status: Completed)
+10. **User:** Vuelve a señalar el problema con la lógica de giros. (Status: Completed, el agente ya estaba trabajando en ello).
+
+**Project Health Check:**
+*   **Broken:** La funcionalidad de inicio de sesión con Google está a medio implementar.
+*   **Mocked:** La lógica de los planes de suscripción no está implementada para usuarios regulares. Las integraciones de pago con Stripe y PayPal son solo placeholders y no tienen un flujo funcional.
+
+**3rd Party Integrations**
+*   **Emergent Google Auth:** En progreso. Utiliza credenciales gestionadas por Emergent.
+*   **Resend (Email):** Integrado. Utiliza la API Key del usuario.
+*   **Capacitor (Mobile App):** Instalado y configurado.
+*   **Stripe (Payments):** Playbook obtenido. Implementación pendiente. Requiere API Key del usuario.
+*   **PayPal (Payments):** Playbook obtenido. Implementación pendiente. Requiere API Key del usuario.
+
+**Testing status**
+*   **Testing agent used after significant changes:** YES
+*   **Troubleshoot agent used after agent stuck in loop:** NO
+*   **Test files created:** []
+*   **Known regressions:** None
+
+**Credentials to test flow:**
+*   Se pueden crear cuentas de usuario directamente desde el formulario de registro.
+*   La cuenta  tiene rol de .
+*   El inicio de sesión con Google se puede probar una vez que se complete la integración.
+
+**What agent forgot to execute**
+*   El agente implementó el rol de súper administrador pero no implementó la lógica de restricción de planes para los usuarios regulares, que era parte de la misma solicitud.</analysis>
