@@ -93,7 +93,7 @@ class CheckoutRequest(BaseModel):
     buyer_email: EmailStr
     buyer_phone: Optional[str] = None
     origin_url: str
-
+    payment_method_type: str = "all"
 
 class CashOrderRequest(BaseModel):
     """Cash payment reservation request."""
@@ -150,6 +150,76 @@ def format_ticket_list(numbers: List[int]) -> str:
 # MERCADOPAGO ENDPOINTS
 # =============================================================================
 
+def _get_payment_methods_config(payment_method_type: str) -> dict:
+    """
+    Configure MercadoPago payment methods based on user selection.
+    
+    Args:
+        payment_method_type: One of: all, card, transfer, wallet, cash
+        
+    Returns:
+        Dict with payment_methods configuration for MercadoPago preference
+    """
+    if payment_method_type == "card":
+        # Only credit/debit cards
+        return {
+            "payment_methods": {
+                "excluded_payment_types": [
+                    {"id": "ticket"},  # No cash
+                    {"id": "bank_transfer"},  # No transfers
+                    {"id": "atm"}  # No ATM
+                ],
+                "installments": 1  # Allow installments for cards
+            }
+        }
+    
+    elif payment_method_type == "transfer":
+        # Only bank transfers (SPEI, etc)
+        return {
+            "payment_methods": {
+                "excluded_payment_types": [
+                    {"id": "ticket"},  # No cash
+                    {"id": "credit_card"},  # No credit cards
+                    {"id": "debit_card"},  # No debit cards
+                    {"id": "prepaid_card"}  # No prepaid cards
+                ]
+            }
+        }
+    
+    elif payment_method_type == "wallet":
+        # Only MercadoPago account balance
+        return {
+            "payment_methods": {
+                "excluded_payment_types": [
+                    {"id": "ticket"},  # No cash
+                    {"id": "credit_card"},  # No credit cards
+                    {"id": "debit_card"},  # No debit cards
+                    {"id": "bank_transfer"}  # No transfers
+                ]
+            }
+        }
+    
+    elif payment_method_type == "cash":
+        # Only cash (OXXO, 7-Eleven, etc)
+        return {
+            "payment_methods": {
+                "excluded_payment_types": [
+                    {"id": "credit_card"},
+                    {"id": "debit_card"},
+                    {"id": "prepaid_card"},
+                    {"id": "bank_transfer"}
+                ]
+            }
+        }
+    
+    else:  # "all" or any other value
+        # Allow all payment methods
+        return {
+            "payment_methods": {
+                "installments": 1  # Allow installments
+            }
+        }
+
 
 @router.post("/payments/mercadopago/create-preference", response_model=dict)
 async def create_mercadopago_preference(request: CheckoutRequest):
@@ -176,7 +246,6 @@ async def create_mercadopago_preference(request: CheckoutRequest):
     raffle = await validate_tickets_available(request.raffle_id, request.ticket_numbers)
 
     # Get raffle creator's user info
-
     raffle_owner = await db.users.find_one({"id": raffle["owner_id"]}, {"_id": 0})
 
     if not raffle_owner:
@@ -272,6 +341,9 @@ async def create_mercadopago_preference(request: CheckoutRequest):
     # Build preference with split payment configuration
     ticket_list = format_ticket_list(request.ticket_numbers)
 
+    # Configure payment methods based on user selection
+    payment_methods_config = _get_payment_methods_config(request.payment_method_type)
+
     # Build preference data with split payments
     preference_data = {
         "items": [
@@ -305,6 +377,7 @@ async def create_mercadopago_preference(request: CheckoutRequest):
         "notification_url": f"{url_backend}/api/webhook/mercadopago",
         "statement_descriptor": "RIFAFACIL",
         "marketplace_fee": marketplace_fee,
+        **payment_methods_config  # Incluye configuración de métodos de pago según selección del usuario
     }
 
     try:
@@ -321,6 +394,7 @@ async def create_mercadopago_preference(request: CheckoutRequest):
             f"Marketplace preference created: {preference.get('id')} "
             f"for vendor {raffle['owner_id']}, fee: ${marketplace_fee:.2f}"
         )
+        logger.info(f"Preference data: {preference}")
 
         return {
             "preference_id": preference.get("id"),

@@ -13,10 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { toast } from 'sonner';
 import axios from 'axios';
 import TicketGrid from '../components/TicketGrid';
+import PaymentMethodSelector from '../components/PaymentMethodSelector';  // ← NUEVO
 import { copyToClipboard } from '../utils/helpers';
 import {
   Share2,
@@ -27,11 +27,9 @@ import {
   User,
   Mail,
   Phone,
-  CreditCard,
   Gift,
-  Banknote,
-  Clock,
-  CheckCircle
+  CheckCircle,
+  CreditCard
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
@@ -46,8 +44,7 @@ const PublicRaffle = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
-  const [cashOrderSuccess, setCashOrderSuccess] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('mercadopago');
+  const [paymentMethod, setPaymentMethod] = useState('card');  // ← NUEVO DEFAULT
   const [buyerInfo, setBuyerInfo] = useState({
     name: '',
     email: '',
@@ -85,99 +82,10 @@ const PublicRaffle = () => {
       toast.error('Selecciona al menos un boleto');
       return;
     }
-    setCashOrderSuccess(null);
     setPurchaseDialogOpen(true);
   };
 
-  const handleCashPayment = async () => {
-    if (!buyerInfo.name || !buyerInfo.email) {
-      toast.error('Por favor completa tu nombre y email');
-      return;
-    }
-
-    setProcessing(true);
-    try {
-      const response = await axios.post(`${API}/payments/cash/create-order`, {
-        raffle_id: raffle.id,
-        ticket_numbers: selectedTickets,
-        buyer_name: buyerInfo.name,
-        buyer_email: buyerInfo.email,
-        buyer_phone: buyerInfo.phone
-      });
-
-      setCashOrderSuccess({
-        orderId: response.data.order_id,
-        expiresAt: response.data.expires_at,
-        message: response.data.message
-      });
-      toast.success('¡Orden creada! Tus boletos están reservados.');
-      setSelectedTickets([]);
-      fetchRaffle();
-    } catch (error) {
-      const message = error.response?.data?.detail || 'Error al crear la orden';
-      toast.error(message);
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  // const handleStripePayment = async () => {
-  //   if (!buyerInfo.name || !buyerInfo.email) {
-  //     toast.error('Por favor completa tu nombre y email');
-  //     return;
-  //   }
-
-  //   setProcessing(true);
-  //   try {
-  //     const response = await axios.post(`${API}/payments/stripe/checkout`, {
-  //       raffle_id: raffle.id,
-  //       ticket_numbers: selectedTickets,
-  //       buyer_name: buyerInfo.name,
-  //       buyer_email: buyerInfo.email,
-  //       buyer_phone: buyerInfo.phone,
-  //       origin_url: window.location.origin
-  //     });
-
-  //     window.location.href = response.data.checkout_url;
-  //   } catch (error) {
-  //     const message = error.response?.data?.detail || 'Error al procesar el pago';
-  //     toast.error(message);
-  //     setProcessing(false);
-  //   }
-  // };
-
-  const handlePayPalCreateOrder = async () => {
-    try {
-      const response = await axios.post(`${API}/payments/paypal/create-order`, {
-        raffle_id: raffle.id,
-        ticket_numbers: selectedTickets,
-        buyer_name: buyerInfo.name,
-        buyer_email: buyerInfo.email,
-        buyer_phone: buyerInfo.phone,
-        origin_url: window.location.origin
-      });
-      return response.data.order_id;
-    } catch (error) {
-      toast.error('Error al crear orden de PayPal');
-      throw error;
-    }
-  };
-
-  const handlePayPalApprove = async (data) => {
-    try {
-      const response = await axios.post(`${API}/payments/paypal/capture-order/${data.orderID}`);
-      if (response.data.status === 'paid') {
-        toast.success('¡Pago completado! Tus boletos han sido reservados.');
-        setPurchaseDialogOpen(false);
-        setSelectedTickets([]);
-        fetchRaffle();
-      }
-    } catch (error) {
-      toast.error('Error al capturar el pago');
-    }
-  };
-
-  const handleMercadoPagoPayment = async () => {
+  const handlePayment = async () => {
     if (!buyerInfo.name || !buyerInfo.email) {
       toast.error('Por favor completa tu nombre y email');
       return;
@@ -188,14 +96,14 @@ const PublicRaffle = () => {
       const response = await axios.post(`${API}/payments/mercadopago/create-preference`, {
         raffle_id: raffle.id,
         ticket_numbers: selectedTickets,
+        payment_method_type: paymentMethod,
         buyer_name: buyerInfo.name,
         buyer_email: buyerInfo.email,
         buyer_phone: buyerInfo.phone,
         origin_url: window.location.origin
       });
-      console.log('Preferencia de MercadoPago creada:', response);
+      console.log('Payment response:', response.data);
 
-      // Use sandbox_init_point for testing, init_point for production
       const checkoutUrl = response.data.init_point || response.data.sandbox_init_point;
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
@@ -204,12 +112,12 @@ const PublicRaffle = () => {
         setProcessing(false);
       }
     } catch (error) {
-      console.error('Error al crear preferencia de MercadoPago:', error);
       const message = error.response?.data?.detail || 'Error al procesar el pago';
       toast.error(message);
       setProcessing(false);
     }
   };
+
 
   const copyShareLink = async () => {
     const success = await copyToClipboard(window.location.href);
@@ -391,217 +299,99 @@ const PublicRaffle = () => {
 
         {/* Purchase Dialog */}
         <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
-          <DialogContent className="max-w-md">
-            {cashOrderSuccess ? (
-              // Cash order success view
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="w-6 h-6" />
-                    ¡Orden Creada!
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="py-6 text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Boletos Reservados</h3>
-                  <p className="text-slate-600 mb-4">{cashOrderSuccess.message}</p>
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-left">
-                    <p className="text-sm text-amber-800">
-                      <strong>Importante:</strong> Tu reserva expira en 48 horas.
-                      Contacta al organizador para coordinar el pago en efectivo.
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => { setPurchaseDialogOpen(false); setCashOrderSuccess(null); }} className="w-full">
-                    Entendido
-                  </Button>
-                </DialogFooter>
-              </>
-            ) : (
-              // Normal purchase form
-              <>
-                <DialogHeader>
-                  <DialogTitle>Completa tu compra</DialogTitle>
-                  <DialogDescription>
-                    {selectedTickets.length} boleto{selectedTickets.length > 1 ? 's' : ''}: #{selectedTickets.sort((a, b) => a - b).join(', #')}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                  {/* Buyer Info */}
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="buyer-name" className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Nombre completo *
-                      </Label>
-                      <Input
-                        id="buyer-name"
-                        placeholder="Juan Pérez"
-                        value={buyerInfo.name}
-                        onChange={(e) => setBuyerInfo({ ...buyerInfo, name: e.target.value })}
-                        data-testid="buyer-name-input"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="buyer-email" className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        Correo electrónico *
-                      </Label>
-                      <Input
-                        id="buyer-email"
-                        type="email"
-                        placeholder="tu@email.com"
-                        value={buyerInfo.email}
-                        onChange={(e) => setBuyerInfo({ ...buyerInfo, email: e.target.value })}
-                        data-testid="buyer-email-input"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="buyer-phone" className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        Teléfono (opcional)
-                      </Label>
-                      <Input
-                        id="buyer-phone"
-                        placeholder="55 1234 5678"
-                        value={buyerInfo.phone}
-                        onChange={(e) => setBuyerInfo({ ...buyerInfo, phone: e.target.value })}
-                        data-testid="buyer-phone-input"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Payment Method */}
-                  <div className="space-y-2">
-                    <Label>Método de pago</Label>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="mercadopago" id="mercadopago" data-testid="radio-mercadopago" />
-                        <Label htmlFor="mercadopago" className="flex items-center gap-2 cursor-pointer flex-1">
-                          <CreditCard className="w-4 h-4 text-blue-500" />
-                          <div>
-                            <span>MercadoPago</span>
-                            <p className="text-xs text-slate-500 font-normal">Tarjeta, OXXO, SPEI y más</p>
-                          </div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="cash" id="cash" data-testid="radio-cash" />
-                        <Label htmlFor="cash" className="flex items-center gap-2 cursor-pointer flex-1">
-                          <Banknote className="w-4 h-4" />
-                          <div>
-                            <span>Efectivo</span>
-                            <p className="text-xs text-slate-500 font-normal">Reserva por 48h mientras pagas</p>
-                          </div>
-                        </Label>
-                      </div>
-                      {/* <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="stripe" id="stripe" data-testid="radio-stripe" />
-                        <Label htmlFor="stripe" className="flex items-center gap-2 cursor-pointer">
-                          <CreditCard className="w-4 h-4" />
-                          Stripe (Internacional)
-                        </Label>
-                      </div> */}
-                      {PAYPAL_CLIENT_ID && (
-                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
-                          <RadioGroupItem value="paypal" id="paypal" data-testid="radio-paypal" />
-                          <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer">
-                            PayPal
-                          </Label>
-                        </div>
-                      )}
-                    </RadioGroup>
-                  </div>
-
-                  {/* Total */}
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Total a pagar:</span>
-                      <span className="text-2xl font-bold text-slate-900">${totalAmount.toFixed(2)} MXN</span>
-                    </div>
-                  </div>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Completa tu compra</DialogTitle>
+              <DialogDescription>
+                {selectedTickets.length} boleto{selectedTickets.length > 1 ? 's' : ''}: #{selectedTickets.sort((a, b) => a - b).join(', #')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* 1. INFORMACIÓN DEL COMPRADOR */}
+              <div className="space-y-3">
+                {/* Nombre */}
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-name" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Nombre completo *
+                  </Label>
+                  <Input
+                    id="buyer-name"
+                    placeholder="Juan Pérez"
+                    value={buyerInfo.name}
+                    onChange={(e) => setBuyerInfo({ ...buyerInfo, name: e.target.value })}
+                    data-testid="buyer-name-input"
+                  />
                 </div>
 
-                <DialogFooter className="flex-col gap-2">
-                  {paymentMethod === 'mercadopago' ? (
-                    <Button
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                      onClick={handleMercadoPagoPayment}
-                      disabled={processing || !buyerInfo.name || !buyerInfo.email}
-                      data-testid="pay-mercadopago-btn"
-                    >
-                      {processing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Redirigiendo a MercadoPago...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Pagar con MercadoPago
-                        </>
-                      )}
-                    </Button>
-                  ) : paymentMethod === 'cash' ? (
-                    <Button
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                      onClick={handleCashPayment}
-                      disabled={processing || !buyerInfo.name || !buyerInfo.email}
-                      data-testid="pay-cash-btn"
-                    >
-                      {processing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Creando reserva...
-                        </>
-                      ) : (
-                        <>
-                          <Banknote className="w-4 h-4 mr-2" />
-                          Reservar boletos (pago en efectivo)
-                        </>
-                      )}
-                    </Button>
-                  )
-                    // : paymentMethod === 'stripe' ? (
-                    //   <Button
-                    //     className="w-full btn-primary"
-                    //     onClick={handleStripePayment}
-                    //     disabled={processing || !buyerInfo.name || !buyerInfo.email}
-                    //     data-testid="pay-stripe-btn"
-                    //   >
-                    //     {processing ? (
-                    //       <>
-                    //         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    //         Procesando...
-                    //       </>
-                    //     ) : (
-                    //       <>
-                    //         <CreditCard className="w-4 h-4 mr-2" />
-                    //         Pagar con Stripe
-                    //       </>
-                    //     )}
-                    //   </Button>
-                    // ) 
-                    : (
-                      PAYPAL_CLIENT_ID && buyerInfo.name && buyerInfo.email ? (
-                        <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "MXN" }}>
-                          <PayPalButtons
-                            createOrder={handlePayPalCreateOrder}
-                            onApprove={handlePayPalApprove}
-                            style={{ layout: "horizontal" }}
-                          />
-                        </PayPalScriptProvider>
-                      ) : (
-                        <p className="text-sm text-slate-500 text-center">Completa tu información para ver opciones de PayPal</p>
-                      )
-                    )}
-                </DialogFooter>
-              </>
-            )}
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Correo electrónico *
+                  </Label>
+                  <Input
+                    id="buyer-email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    value={buyerInfo.email}
+                    onChange={(e) => setBuyerInfo({ ...buyerInfo, email: e.target.value })}
+                    data-testid="buyer-email-input"
+                  />
+                </div>
+
+                {/* Teléfono */}
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-phone" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Teléfono (opcional)
+                  </Label>
+                  <Input
+                    id="buyer-phone"
+                    placeholder="55 1234 5678"
+                    value={buyerInfo.phone}
+                    onChange={(e) => setBuyerInfo({ ...buyerInfo, phone: e.target.value })}
+                    data-testid="buyer-phone-input"
+                  />
+                </div>
+              </div>
+
+              {/* 2. SELECTOR DE MÉTODO DE PAGO */}
+              <PaymentMethodSelector
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+              />
+
+              {/* 3. TOTAL A PAGAR */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Total a pagar:</span>
+                  <span className="text-2xl font-bold text-slate-900">${totalAmount.toFixed(2)} MXN</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. BOTÓN DE ACCIÓN */}
+            <DialogFooter>
+              <Button
+                className="w-full btn-primary text-lg py-6"
+                onClick={handlePayment}
+                disabled={processing || !buyerInfo.name || !buyerInfo.email}
+                data-testid="pay-btn"
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Continuar al pago
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

@@ -241,6 +241,10 @@ class CheckoutRequest(BaseModel):
     buyer_email: EmailStr = Field(..., description="Buyer's email")
     buyer_phone: Optional[str] = Field(None, description="Buyer's phone")
     origin_url: str = Field(..., description="Frontend URL for redirects")
+    payment_method_type: Optional[str] = Field(
+        "all", 
+        description="Payment method type: all, card, transfer, wallet, cash"
+    )  # ← LÍNEAS AGREGADAS
 
 
 class MercadoPagoCheckoutRequest(BaseModel):
@@ -256,6 +260,10 @@ class MercadoPagoCheckoutRequest(BaseModel):
     buyer_email: EmailStr
     buyer_phone: Optional[str] = None
     origin_url: str
+    payment_method_type: Optional[str] = Field(
+        "all", 
+        description="Payment method type: all, card, transfer, wallet, cash"
+    )
 
 
 class CashOrderRequest(BaseModel):
