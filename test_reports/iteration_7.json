@@ -5,7 +5,7 @@
     "minor": [
       {
         "endpoint": "/api/payments/mercadopago/create-preference",
-        "issue": "Returns 503 as expected when MERCADOPAGO_ACCESS_TOKEN not configured. Note: Cloudflare sometimes returns 520 on external tests due to response handling.",
+        "issue": "Returns 503 as expected when MERCADOPAGO_ACCESS_TOKEN_PRO not configured. Note: Cloudflare sometimes returns 520 on external tests due to response handling.",
         "expected_behavior": true
       }
     ]
@@ -16,7 +16,9 @@
     "design_issues": [
       {
         "screen": "Registration form",
-        "issues": ["Has 4 fields (Name, Email, Password, Confirm Password) but API only needs 3 (Name, Email, Password). Consider if confirm password validation is frontend-only or needs backend support."]
+        "issues": [
+          "Has 4 fields (Name, Email, Password, Confirm Password) but API only needs 3 (Name, Email, Password). Consider if confirm password validation is frontend-only or needs backend support."
+        ]
       }
     ]
   },
@@ -69,14 +71,14 @@
   "seed_data_creation": "Multiple test users created during pytest execution with unique email suffixes",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Auth flows (Google OAuth, email/password, registration) are working. MercadoPago integration is implemented but requires MERCADOPAGO_ACCESS_TOKEN environment variable to be functional - currently returns 503. Free plan limit (max 2 active raffles) is enforced. MercadoPago is the default/first payment option in the public raffle purchase dialog.",
+  "context_for_next_testing_agent": "Auth flows (Google OAuth, email/password, registration) are working. MercadoPago integration is implemented but requires MERCADOPAGO_ACCESS_TOKEN_PRO environment variable to be functional - currently returns 503. Free plan limit (max 2 active raffles) is enforced. MercadoPago is the default/first payment option in the public raffle purchase dialog.",
   "features_verified": {
     "google_oauth": "AuthContext.login() accepts (token, user) for direct login from Google callback. AuthCallback.js extracts session_id from hash and exchanges with /api/auth/google/session",
     "email_password_login": "POST /api/auth/login returns token+user, AuthContext stores in localStorage",
     "registration": "POST /api/auth/register creates user with 'free' plan, returns token+user",
     "free_plan_limits": "Free users limited to 2 active raffles, 3rd attempt returns 403 with 'limitado a 2 rifas activas' message",
-    "mercadopago_endpoint": "POST /api/payments/mercadopago/create-preference - returns 503 when MERCADOPAGO_ACCESS_TOKEN not set",
+    "mercadopago_endpoint": "POST /api/payments/mercadopago/create-preference - returns 503 when MERCADOPAGO_ACCESS_TOKEN_PRO not set",
     "mercadopago_ui": "PublicRaffle.js shows MercadoPago as first payment option with 'Tarjeta, OXXO, SPEI y más' description, selected by default"
   },
-  "mercadopago_status": "IMPLEMENTED BUT NOT CONFIGURED - Requires MERCADOPAGO_ACCESS_TOKEN in backend/.env to be functional. Currently returns 503 with message 'MercadoPago no configurado'"
+  "mercadopago_status": "IMPLEMENTED BUT NOT CONFIGURED - Requires MERCADOPAGO_ACCESS_TOKEN_PRO in backend/.env to be functional. Currently returns 503 with message 'MercadoPago no configurado'"
 }

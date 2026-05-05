@@ -8,14 +8,11 @@ Endpoints:
     GET /payments/mercadopago/status/{id} - Get payment status
     POST /payments/mercadopago/verify/{id} - Verify payment
     POST /webhook/mercadopago - MP webhook handler
-
     POST /payments/stripe/checkout - Create Stripe checkout
     GET /payments/stripe/status/{id} - Get Stripe status
-
     POST /payments/paypal/create-order - Create PayPal order
     POST /payments/paypal/capture-order/{id} - Capture PayPal payment
     POST /payments/cash/create-order - Create cash reservation
-
     POST /test/email - Test email sending
 """
 
@@ -27,10 +24,19 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import uuid
 import logging
+import mercadopago
 
 from config import db
 from config.settings import settings
 from services.email_service import EmailService
+
+from models.schemas import (
+    CheckoutRequest,
+    CardPaymentRequest,
+    CashPaymentRequest,
+    CashPaymentResponse,
+    MessageResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Payments"])
@@ -43,14 +49,25 @@ _mp_sdk = None
 # _stripe_checkout = None
 _paypal_client = None
 
+_url_backend = (
+    settings.NGROK_BACKEND_URL
+    if settings.ENVIRONMENT == "development"
+    else settings.BACKEND_URL
+)
+_url_frontend = (
+    settings.NGROK_FRONTEND_URL
+    if settings.ENVIRONMENT == "development"
+    else settings.FRONTEND_URL
+)
+
 
 def get_mercadopago_sdk():
     """Get MercadoPago SDK instance (lazy initialization)."""
     global _mp_sdk
-    if _mp_sdk is None and settings.MERCADOPAGO_ACCESS_TOKEN:
+    if _mp_sdk is None and settings.MERCADOPAGO_ACCESS_TOKEN_PRO:
         import mercadopago
 
-        _mp_sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+        _mp_sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN_PRO)
     return _mp_sdk
 
 
@@ -94,6 +111,7 @@ class CheckoutRequest(BaseModel):
     buyer_phone: Optional[str] = None
     origin_url: str
     payment_method_type: str = "all"
+
 
 class CashOrderRequest(BaseModel):
     """Cash payment reservation request."""
@@ -150,13 +168,14 @@ def format_ticket_list(numbers: List[int]) -> str:
 # MERCADOPAGO ENDPOINTS
 # =============================================================================
 
+
 def _get_payment_methods_config(payment_method_type: str) -> dict:
     """
     Configure MercadoPago payment methods based on user selection.
-    
+
     Args:
         payment_method_type: One of: all, card, transfer, wallet, cash
-        
+
     Returns:
         Dict with payment_methods configuration for MercadoPago preference
     """
@@ -167,12 +186,12 @@ def _get_payment_methods_config(payment_method_type: str) -> dict:
                 "excluded_payment_types": [
                     {"id": "ticket"},  # No cash
                     {"id": "bank_transfer"},  # No transfers
-                    {"id": "atm"}  # No ATM
+                    {"id": "atm"},  # No ATM
                 ],
-                "installments": 1  # Allow installments for cards
+                "installments": 1,  # Allow installments for cards
             }
         }
-    
+
     elif payment_method_type == "transfer":
         # Only bank transfers (SPEI, etc)
         return {
@@ -181,11 +200,11 @@ def _get_payment_methods_config(payment_method_type: str) -> dict:
                     {"id": "ticket"},  # No cash
                     {"id": "credit_card"},  # No credit cards
                     {"id": "debit_card"},  # No debit cards
-                    {"id": "prepaid_card"}  # No prepaid cards
+                    {"id": "prepaid_card"},  # No prepaid cards
                 ]
             }
         }
-    
+
     elif payment_method_type == "wallet":
         # Only MercadoPago account balance
         return {
@@ -194,11 +213,11 @@ def _get_payment_methods_config(payment_method_type: str) -> dict:
                     {"id": "ticket"},  # No cash
                     {"id": "credit_card"},  # No credit cards
                     {"id": "debit_card"},  # No debit cards
-                    {"id": "bank_transfer"}  # No transfers
+                    {"id": "bank_transfer"},  # No transfers
                 ]
             }
         }
-    
+
     elif payment_method_type == "cash":
         # Only cash (OXXO, 7-Eleven, etc)
         return {
@@ -207,18 +226,14 @@ def _get_payment_methods_config(payment_method_type: str) -> dict:
                     {"id": "credit_card"},
                     {"id": "debit_card"},
                     {"id": "prepaid_card"},
-                    {"id": "bank_transfer"}
+                    {"id": "bank_transfer"},
                 ]
             }
         }
-    
+
     else:  # "all" or any other value
         # Allow all payment methods
-        return {
-            "payment_methods": {
-                "installments": 1  # Allow installments
-            }
-        }
+        return {"payment_methods": {"installments": 1}}  # Allow installments
 
 
 @router.post("/payments/mercadopago/create-preference", response_model=dict)
@@ -231,17 +246,6 @@ async def create_mercadopago_preference(request: CheckoutRequest):
 
     The money goes directly to the raffle creator, minus the marketplace fee.
     """
-
-    url_backend = (
-        settings.NGROK_BACKEND_URL
-        if settings.ENVIRONMENT == "development"
-        else settings.BACKEND_URL
-    )
-    url_frontend = (
-        settings.NGROK_FRONTEND_URL
-        if settings.ENVIRONMENT == "development"
-        else settings.FRONTEND_URL
-    )
 
     raffle = await validate_tickets_available(request.raffle_id, request.ticket_numbers)
 
@@ -368,16 +372,16 @@ async def create_mercadopago_preference(request: CheckoutRequest):
             "email": request.buyer_email,
         },
         "back_urls": {
-            "success": f"{url_frontend}/payment/success?method=mercadopago&transaction_id={transaction_id}",
-            "failure": f"{url_frontend}/raffle/{raffle['share_code']}?payment=failed",
-            "pending": f"{url_frontend}/raffle/{raffle['share_code']}?payment=pending",
+            "success": f"{_url_frontend}/payment/success?method=mercadopago&transaction_id={transaction_id}",
+            "failure": f"{_url_frontend}/raffle/{raffle['share_code']}?payment=failed",
+            "pending": f"{_url_frontend}/raffle/{raffle['share_code']}?payment=pending",
         },
         "auto_return": "approved",
         "external_reference": transaction_id,
-        "notification_url": f"{url_backend}/api/webhook/mercadopago",
+        "notification_url": f"{_url_backend}/api/webhook/mercadopago",
         "statement_descriptor": "RIFAFACIL",
         "marketplace_fee": marketplace_fee,
-        **payment_methods_config  # Incluye configuración de métodos de pago según selección del usuario
+        **payment_methods_config,  # Incluye configuración de métodos de pago según selección del usuario
     }
 
     try:
@@ -523,17 +527,6 @@ async def mercadopago_webhook(request: Request):
         return {"status": "error"}
 
 
-@router.get("/test/email")
-async def test_email(request: Request):
-    """Test email sending."""
-    try:
-        await email_service.send_test_email(to_email="valiente90@outlook.com")
-        return {"status": "success", "message": "Test email sent"}
-    except Exception as e:
-        logger.error(f"Test email error: {e}")
-        return {"status": "error", "message": f"Failed to send test email: {str(e)}"}
-
-
 async def _process_successful_payment(transaction: dict, payment_id: str):
     """
     Process a successful payment - update transaction and tickets.
@@ -581,6 +574,41 @@ async def _process_successful_payment(transaction: dict, payment_id: str):
         )
 
     logger.info(f"Payment {payment_id} processed successfully")
+
+
+async def _process_reserved_tickets_numbers(transaction: dict, payment_id: str):
+    """
+    Process reserved ticket numbers. This is used for cash payments where we reserve the ticket numbers before payment confirmation.
+    Args:
+        transaction: Transaction document
+        payment_id: External payment ID
+    """
+
+    # Update tickets
+    raffle = await db.raffles.find_one({"id": transaction["raffle_id"]}, {"_id": 0})
+
+    if raffle:
+        for ticket in raffle["tickets"]:
+            if ticket["number"] in transaction["ticket_numbers"]:
+                ticket["status"] = "reserved"
+                ticket["buyer_name"] = transaction["buyer_name"]
+                ticket["buyer_email"] = transaction["buyer_email"]
+                ticket["purchased_at"] = datetime.now(timezone.utc).isoformat()
+
+        await db.raffles.update_one(
+            {"id": transaction["raffle_id"]}, {"$set": {"tickets": raffle["tickets"]}}
+        )
+
+        await email_service.send_cash_order_created(
+            to_email=transaction["buyer_email"],
+            buyer_name=transaction["buyer_name"],
+            raffle_title=raffle["title"],
+            ticket_numbers=transaction["ticket_numbers"],
+            total_amount=transaction["amount"],
+            expires_at=transaction["expires_at"]
+        )
+
+    logger.info(f"tickets reserved successfully for transaction {transaction['id']} with payment id {payment_id}")
 
 
 # =============================================================================
@@ -875,3 +903,406 @@ async def create_cash_order(request: CashOrderRequest):
         "expires_at": expires_at.isoformat(),
         "message": "Boletos reservados por 48 horas. Contacta al organizador para completar el pago.",
     }
+
+
+# =============================================================================
+# CHECKOUT API - CARD PAYMENT ENDPOINTS
+# =============================================================================
+
+
+@router.get("/payments/mercadopago/public-key/", response_model=dict)
+async def get_mercadopago_public_key(fle_id: str):
+    """
+     The frontend Card Payment Brick must use the VENDOR's public key (not the platform's)
+    so the tokenized card data is associated with the correct seller account.
+
+    Args:
+        raffle_id: ID of the raffle (used to identify the vendor)
+
+    Returns:
+        Vendor's MercadoPago public_key (format: APP_USR-xxx or TEST-xxx)
+    """
+    # In production, you should have a separate PUBLIC_KEY
+    # For now, we'll note this needs to be configured
+
+    raffle_id = await db.raffles.find_one({"id": fle_id}, {"_id": 0})
+    if not raffle_id:
+        raise HTTPException(status_code=404, detail="Rifa no encontrada")
+
+    mp_credentials = await db.mp_oauth_credentials.find_one(
+        {"user_id": raffle_id["owner_id"]}, {"_id": 0}
+    )
+
+    if not mp_credentials:
+        raise HTTPException(
+            status_code=400,
+            detail="Credenciales de MercadoPago no encontradas para el creador de la rifa",
+        )
+
+    public_key = mp_credentials.get("public_key")
+
+    # Fallback: if public_key wasn't saved during OAuth, fetch it from MP API
+    if not public_key:
+        logger.warning(
+            f"public_key missing for vendor {raffle_id['owner_id']}, fetching from MP API"
+        )
+        try:
+            from services.mercadopago_oauth_service import MercadoPagoOAuthService
+
+            oauth_service = MercadoPagoOAuthService()
+
+            access_token = mp_credentials.get("access_token")
+            if access_token:
+                public_key = await oauth_service.get_public_key(access_token)
+
+                if public_key:
+                    logger.info(
+                        f"Successfully fetched public_key from MP API for vendor {raffle_id['owner_id']}"
+                    )
+                    # Save it for future use
+                    await db.mp_oauth_credentials.update_one(
+                        {"user_id": raffle_id["owner_id"]},
+                        {"$set": {"public_key": public_key}},
+                    )
+        except Exception as e:
+            logger.error(f"Failed to fetch public_key from MP API: {e}")
+
+    if not public_key:
+        raise HTTPException(
+            status_code=500,
+            detail="No se encontró la Public Key del vendedor. Por favor, pídele al creador de la rifa que reconecte su cuenta de MercadoPago.",
+        )
+
+    return {
+        "public_key": public_key,
+        "message": "Usa esta clave para inicializar el Brick de MercadoPago en el frontend.",
+    }
+
+
+@router.post("/payments/card/process")
+async def process_card_payment(request: CardPaymentRequest):
+    """
+    Process card payment via Checkout API (Card Payment Brick).
+
+    This endpoint receives the tokenized card data from the frontend
+    and creates a payment using the MercadoPago API.
+    """
+    raffle = await validate_tickets_available(request.raffle_id, request.ticket_numbers)
+
+    # Get raffle creator's user info
+    raffle_owner = await db.users.find_one({"id": raffle["owner_id"]}, {"_id": 0})
+
+    if not raffle_owner:
+        raise HTTPException(status_code=404, detail="Creador de la rifa no encontrado")
+
+    # Check if raffle creator has connected MercadoPago account
+    if not raffle_owner.get("mp_connected"):
+        raise HTTPException(
+            status_code=400,
+            detail="El creador de esta rifa no ha conectado su cuenta de MercadoPago",
+        )
+
+    # Get OAuth credentials for the raffle creator
+    mp_credentials = await db.mp_oauth_credentials.find_one(
+        {"user_id": raffle["owner_id"]}, {"_id": 0}
+    )
+
+    if not mp_credentials:
+        raise HTTPException(
+            status_code=400, detail="Credenciales de MercadoPago no encontradas"
+        )
+
+    # Check if token needs refresh
+    from services.mercadopago_oauth_service import oauth_service
+    from datetime import datetime as dt
+
+    expires_at = dt.fromisoformat(mp_credentials["expires_at"].replace("Z", "+00:00"))
+
+    if oauth_service.is_token_expired(expires_at):
+        try:
+            token_response = await oauth_service.refresh_access_token(
+                mp_credentials["refresh_token"]
+            )
+            new_expires_at = oauth_service.calculate_token_expiry(
+                token_response.get("expires_in", 21600)
+            )
+            await db.mp_oauth_credentials.update_one(
+                {"user_id": raffle["owner_id"]},
+                {
+                    "$set": {
+                        "access_token": token_response["access_token"],
+                        "expires_at": new_expires_at.isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+            mp_credentials["access_token"] = token_response["access_token"]
+        except Exception as e:
+            logger.error(f"Failed to refresh token: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="No se pudo renovar el token de MercadoPago"
+            )
+
+    # Calculate amounts
+    total_amount = float(raffle["ticket_price"]) * len(request.ticket_numbers)
+    marketplace_fee = total_amount * (settings.MARKETPLACE_FEE_PERCENTAGE / 100)
+
+    # Create transaction record
+    transaction_id = str(uuid.uuid4())
+    transaction_doc = {
+        "id": transaction_id,
+        "raffle_id": request.raffle_id,
+        "ticket_numbers": request.ticket_numbers,
+        "buyer_name": request.buyer_name,
+        "buyer_email": request.buyer_email,
+        "buyer_phone": request.buyer_phone,
+        "amount": total_amount,
+        "marketplace_fee": marketplace_fee,
+        "vendor_amount": total_amount - marketplace_fee,
+        "currency": "MXN",
+        "payment_method": "card",
+        "payment_status": "pending",
+        "vendor_user_id": raffle["owner_id"],
+        "vendor_mp_user_id": mp_credentials["mp_user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.payment_transactions.insert_one(transaction_doc)
+
+    # Create payment via MercadoPago API
+    vendor_sdk = mercadopago.SDK(mp_credentials["access_token"])
+    # vendor_sdk = mercadopago.SDK(
+    #     "TEST-1794295438142925-110100-0cd13cfd69ff4ee8275abf28c261c7dd-1273765353"
+    # )  # TODO: Remove this hardcoded test token and use the vendor's access token instead. This is just for testing purposes.
+
+    payment_data = {
+        "transaction_amount": total_amount,
+        "token": request.token,
+        "description": f"Boletos para {raffle['title']}",
+        "installments": request.installments,
+        "payment_method_id": request.payment_method_id,
+        "issuer_id": request.issuer_id,
+        "payer": {
+            "email": request.buyer_email,
+            "first_name": (
+                request.buyer_name.split()[0] if request.buyer_name else "Comprador"
+            ),
+            "last_name": (
+                request.buyer_name.split()[-1]
+                if len(request.buyer_name.split()) > 1
+                else ""
+            ),
+            "identification": {
+                "type": request.identification_type,
+                "number": request.identification_number,
+            },
+        },
+        "external_reference": transaction_id,
+        "statement_descriptor": "RIFAFACIL",
+        "application_fee": marketplace_fee,
+    }
+
+    try:
+        response = vendor_sdk.payment().create(payment_data)
+        payment = response["response"]
+
+        # Update transaction with payment info
+        await db.payment_transactions.update_one(
+            {"id": transaction_id},
+            {
+                "$set": {
+                    "mercadopago_payment_id": payment.get("id"),
+                    "payment_status": payment.get("status"),
+                    "status_detail": payment.get("status_detail"),
+                }
+            },
+        )
+
+        logger.info(f"Card payment response: {payment}")
+
+        logger.info(
+            f"Card payment created: {payment.get('id')} "
+            f"Status: {payment.get('status')} "
+            f"Fee: ${marketplace_fee:.2f}"
+        )
+
+        # If approved, process immediately
+        if payment.get("status") == "approved":
+            await _process_successful_payment(transaction_doc, str(payment.get("id")))
+
+        return {
+            "success": True,
+            "payment_id": payment.get("id"),
+            "status": payment.get("status"),
+            "status_detail": payment.get("status_detail"),
+            "transaction_id": transaction_id,
+            "amount": total_amount,
+            "marketplace_fee": marketplace_fee,
+        }
+
+    except Exception as e:
+        logger.error(f"Card payment error: {e}")
+        await db.payment_transactions.delete_one({"id": transaction_id})
+        raise HTTPException(
+            status_code=500, detail=f"Error procesando el pago: {str(e)}"
+        )
+
+
+# =============================================================================
+# CHECKOUT API - CASH PAYMENT ENDPOINTS
+# =============================================================================
+@router.post("/payments/cash/generate", response_model=CashPaymentResponse)
+async def generate_cash_payment(request: CashPaymentRequest):
+    """
+    Generate cash payment ticket (OXXO, 7-Eleven, etc.) via Checkout API.
+
+    Creates a payment and returns the ticket/voucher information
+    for the user to pay at a physical store.
+    """
+    raffle = await validate_tickets_available(request.raffle_id, request.ticket_numbers)
+
+    # Get raffle creator's user info
+    raffle_owner = await db.users.find_one({"id": raffle["owner_id"]}, {"_id": 0})
+
+    if not raffle_owner or not raffle_owner.get("mp_connected"):
+        raise HTTPException(
+            status_code=400,
+            detail="El creador de esta rifa no ha conectado su cuenta de MercadoPago",
+        )
+
+    # Get OAuth credentials
+    mp_credentials = await db.mp_oauth_credentials.find_one(
+        {"user_id": raffle["owner_id"]}, {"_id": 0}
+    )
+
+    if not mp_credentials:
+        raise HTTPException(
+            status_code=400, detail="Credenciales de MercadoPago no encontradas"
+        )
+
+    # Refresh token if needed (same logic as card payment)
+    from services.mercadopago_oauth_service import oauth_service
+    from datetime import datetime as dt
+
+    expires_at = dt.fromisoformat(mp_credentials["expires_at"].replace("Z", "+00:00"))
+
+    if oauth_service.is_token_expired(expires_at):
+        try:
+            token_response = await oauth_service.refresh_access_token(
+                mp_credentials["refresh_token"]
+            )
+            new_expires_at = oauth_service.calculate_token_expiry(
+                token_response.get("expires_in", 21600)
+            )
+            await db.mp_oauth_credentials.update_one(
+                {"user_id": raffle["owner_id"]},
+                {
+                    "$set": {
+                        "access_token": token_response["access_token"],
+                        "expires_at": new_expires_at.isoformat(),
+                    }
+                },
+            )
+            mp_credentials["access_token"] = token_response["access_token"]
+        except Exception as e:
+            logger.warning(f"Failed to refresh token for cash payment: {str(e)}")
+            pass
+
+    # Calculate amounts
+    total_amount = float(raffle["ticket_price"]) * len(request.ticket_numbers)
+    marketplace_fee = total_amount * (settings.MARKETPLACE_FEE_PERCENTAGE / 100)
+
+    # Create transaction record
+    transaction_id = str(uuid.uuid4())
+    transaction_doc = {
+        "id": transaction_id,
+        "raffle_id": request.raffle_id,
+        "ticket_numbers": request.ticket_numbers,
+        "buyer_name": request.buyer_name,
+        "buyer_email": request.buyer_email,
+        "buyer_phone": request.buyer_phone,
+        "amount": total_amount,
+        "marketplace_fee": marketplace_fee,
+        "vendor_amount": total_amount - marketplace_fee,
+        "currency": "MXN",
+        "payment_method": "cash",
+        "payment_status": "pending",
+        "vendor_user_id": raffle["owner_id"],
+        "vendor_mp_user_id": mp_credentials["mp_user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    }
+    await db.payment_transactions.insert_one(transaction_doc)
+
+    # Create cash payment via MercadoPago API
+    # vendor_sdk = mercadopago.SDK(mp_credentials["access_token"])
+    vendor_sdk = mercadopago.SDK("TEST-1794295438142925-110100-0cd13cfd69ff4ee8275abf28c261c7dd-1273765353"
+    )  
+    # TODO: Remove this hardcoded test token and use the vendor's access token instead. This is just for testing purposes.
+
+    payment_data = {
+        "transaction_amount": total_amount,
+        "description": f"Boletos para {raffle['title']}",
+        "payment_method_id": "oxxo",  # OXXO payment
+        "payer": {
+            "email": request.buyer_email,
+            "first_name": (
+                request.buyer_name.split()[0] if request.buyer_name else "Comprador"
+            ),
+            "last_name": (
+                request.buyer_name.split()[-1]
+                if len(request.buyer_name.split()) > 1
+                else ""
+            ),
+        },
+        "external_reference": transaction_id,
+        "application_fee": marketplace_fee,
+        "notification_url": f"{_url_backend}/api/webhook/mercadopago",
+    }
+
+    try:
+        response = vendor_sdk.payment().create(payment_data)
+        payment = response["response"]
+
+        if(not payment.get("id") or not payment.get("status")):
+            logger.error(f"Invalid payment response from MercadoPago: {payment}")
+            raise HTTPException(status_code=500, detail="Error generando el ticket de pago. Intenta de nuevo más tarde.")
+
+        logger.info(f"Datros del pago en efectivo {payment}")
+
+        # Update transaction
+        await db.payment_transactions.update_one(
+            {"id": transaction_id},
+            {
+                "$set": {
+                    "mercadopago_payment_id": payment.get("id"),
+                    "payment_status": payment.get("status"),
+                }
+            },
+        )
+
+        # Extract ticket information
+        transaction_details = payment.get("transaction_details", {})
+        expiration_date = payment.get("date_of_expiration", "")
+
+        #send reservation email with ticket details
+        await _process_reserved_tickets_numbers(transaction_doc, str(payment.get("id")))
+
+        logger.info(
+            f"Cash payment created: {payment.get('id')} - OXXO ticket generated"
+        )
+
+        return CashPaymentResponse(
+            transaction_id=transaction_id,
+            payment_id=str(payment.get("id")),
+            ticket_url=transaction_details.get("external_resource_url"),
+            barcode=transaction_details.get("verification_code"),
+            external_resource_url=transaction_details.get("external_resource_url"),
+            expiration_date=expiration_date,
+            amount=total_amount,
+            message="Ticket generado. Paga en OXXO con el código de barras o referencia.",
+        )
+
+    except Exception as e:
+        logger.error(f"Cash payment error: {e}")
+        await db.payment_transactions.delete_one({"id": transaction_id})
+        raise HTTPException(status_code=500, detail=f"Error generando ticket: {str(e)}")

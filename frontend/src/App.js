@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useCapacitor, useSafeArea, isNativeApp } from './utils/capacitor';
@@ -70,17 +71,8 @@ const Layout = ({ children, showNavbar = true }) => {
   );
 };
 
-// Router wrapper to detect Google OAuth callback
+// Router wrapper
 function AppRouter() {
-  const location = useLocation();
-
-  // CRITICAL: Check for session_id in URL fragment SYNCHRONOUSLY during render
-  // This prevents race conditions by processing OAuth callback BEFORE any other route logic
-  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-  if (location.hash?.includes('session_id=')) {
-    return <AuthCallback />;
-  }
-
   return <AppRoutes />;
 }
 
@@ -160,15 +152,19 @@ function App() {
   useCapacitor();
   useSafeArea();
 
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <div className={isNativeApp() ? 'native-app' : ''}>
-          <AppRouter />
-          <Toaster position="top-right" richColors />
-        </div>
-      </AuthProvider>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter>
+        <AuthProvider>
+          <div className={isNativeApp() ? 'native-app' : ''}>
+            <AppRouter />
+            <Toaster position="top-right" richColors />
+          </div>
+        </AuthProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

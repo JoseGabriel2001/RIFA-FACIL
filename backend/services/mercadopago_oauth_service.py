@@ -87,7 +87,7 @@ class MercadoPagoOAuthService:
         auth_url = f"{self.auth_url}?{query_string}"
 
         logger.info(
-            f"Generated OAuth authorization URL with state: {state} and PKCE challenge"
+            f"Generated OAuth authorization URL with state: {state} and PKCE challenge, url length: {auth_url}"
         )
         return auth_url, code_verifier
 
@@ -221,6 +221,76 @@ class MercadoPagoOAuthService:
 
         except httpx.HTTPError as e:
             logger.error(f"Failed to get vendor info: {str(e)}")
+            return None
+
+    async def get_public_key(self, access_token: str) -> Optional[str]:
+        """
+        Get the public key for a MercadoPago vendor account.
+        
+        Attempts multiple methods to obtain the public key:
+        1. Fetch from /users/me and look for public_key field
+        2. Query /merchant_accounts for credentials
+        3. Construct from user_id as fallback
+        
+        Args:
+            access_token: Vendor's MercadoPago access token
+            
+        Returns:
+            Public key string (format: APP_USR-xxx) or None if not found
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                # Method 1: Get from /users/me
+                users_response = await client.get(
+                    f"{self.base_url}/users/me",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/json",
+                    },
+                    timeout=30.0,
+                )
+                
+                users_response.raise_for_status()
+                user_data = users_response.json()
+                
+                # Check if public_key is in user data
+                if "public_key" in user_data and user_data["public_key"]:
+                    logger.info(f"Found public_key in /users/me response")
+                    return user_data["public_key"]
+                
+                user_id = user_data.get("id")
+                
+                # Method 2: Query merchant_accounts endpoint
+                try:
+                    merchant_response = await client.get(
+                        f"{self.base_url}/merchant_accounts/{user_id}",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Accept": "application/json",
+                        },
+                        timeout=30.0,
+                    )
+                    
+                    if merchant_response.status_code == 200:
+                        merchant_data = merchant_response.json()
+                        if "public_key" in merchant_data:
+                            logger.info(f"Found public_key in /merchant_accounts response")
+                            return merchant_data["public_key"]
+                except Exception as e:
+                    logger.debug(f"merchant_accounts endpoint failed: {e}")
+                
+                # Method 3: Construct public_key from user_id
+                # MercadoPago public keys have format: APP_USR-{user_id}
+                if user_id:
+                    constructed_key = f"APP_USR-{user_id}"
+                    logger.warning(f"Constructed public_key from user_id: {constructed_key}")
+                    return constructed_key
+                
+                logger.error(f"Could not determine public_key from any source")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to get public_key: {str(e)}")
             return None
 
     def calculate_token_expiry(self, expires_in: int) -> datetime:

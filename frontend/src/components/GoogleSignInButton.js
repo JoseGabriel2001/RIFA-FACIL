@@ -2,28 +2,21 @@
  * @fileoverview Google Sign-In Button Component
  * 
  * A reusable button component for initiating Google OAuth authentication.
- * Uses Emergent Auth's OAuth endpoint for Google sign-in.
+ * Uses Google's official React OAuth library for secure sign-in.
  * 
  * OAuth Flow:
  * 1. User clicks this button
- * 2. Redirected to Emergent Auth's Google OAuth URL
+ * 2. Google OAuth popup/redirect appears
  * 3. User authenticates with Google
- * 4. Redirected back to current page with session_id in hash
- * 5. AuthCallback component handles the session exchange
- * 
- * IMPORTANT: Do not hardcode redirect URLs or add fallbacks!
- * The redirect URL must be the current page for the OAuth flow to work.
+ * 4. Returns ID token to frontend
+ * 5. Frontend sends ID token to backend for validation
+ * 6. Backend validates token with Google and creates/updates user
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Button } from './ui/button';
-
-/** Emergent Auth's Google OAuth endpoint */
-const GOOGLE_AUTH_BASE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '446691362197-un1iq05n3sebs0v0aigbg3spgejl5td1.apps.googleusercontent.com';
-console.log('Google Client ID:', process.env); // Debug log to verify client ID is loaded
-const GOOGLE_SCOPE = 'openid email profile';
-const GOOGLE_RESPONSE_TYPE = 'code'; // o "token" si usas flujo implícito
+import { Loader2 } from 'lucide-react';
 
 /**
  * @typedef {Object} GoogleSignInButtonProps
@@ -70,41 +63,16 @@ const GoogleIcon = () => (
  * @returns {string} Localized button text
  */
 const getButtonText = (mode) => {
-  return mode === 'login' 
-    ? 'Continuar con Google' 
+  return mode === 'login'
+    ? 'Continuar con Google'
     : 'Registrarse con Google';
-};
-
-/**
- * Build the Google OAuth URL with redirect parameter.
- * 
- * The redirect_url is set to the current page (origin + pathname)
- * without the hash fragment. After authentication, Google redirects
- * back to this URL with the session_id in the hash.
- * 
- * @returns {string} Complete OAuth URL
- */
-const buildGoogleAuthUrl = () => {
-  // Use current page as redirect target (without any hash)
-  const redirectUrl = window.location.origin + window.location.pathname;
-  // Build the complete OAuth URL with encoded redirect
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: redirectUrl,
-    response_type: GOOGLE_RESPONSE_TYPE,
-    scope: GOOGLE_SCOPE,
-    prompt: 'select_account',
-    access_type: 'online',
-  });
-
-  return `${GOOGLE_AUTH_BASE_URL}?${params.toString()}`;
 };
 
 /**
  * GoogleSignInButton Component
  * 
  * Renders a button that initiates Google OAuth authentication.
- * Styled to match Google's brand guidelines while fitting the app's design.
+ * Uses Google's official OAuth library for secure authentication.
  * 
  * @param {GoogleSignInButtonProps} props - Component props
  * @returns {JSX.Element} Rendered button
@@ -118,27 +86,71 @@ const buildGoogleAuthUrl = () => {
  * <GoogleSignInButton mode="register" />
  */
 const GoogleSignInButton = ({ mode = 'login' }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
   /**
-   * Handle button click.
-   * Redirects the browser to Google's OAuth flow.
+   * Handle successful Google authentication.
+   * Exchanges the authorization code for tokens at the backend.
    */
-  const handleGoogleSignIn = () => {
-    const authUrl = buildGoogleAuthUrl();
-    window.location.href = authUrl;
-  };
+  const handleGoogleSuccess = useCallback(async (response) => {
+    try {
+      setIsLoading(true);
+
+      // Get the access token from Google
+      const { access_token } = response;
+
+      // Send to backend for validation and user creation
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+      const authResponse = await fetch(`${backendUrl}/api/auth/google/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ access_token }),
+      });
+
+      if (!authResponse.ok) {
+        throw new Error('Failed to authenticate with Google');
+      }
+
+      const authData = await authResponse.json();
+      localStorage.setItem('token', authData.token);
+      localStorage.setItem('user', JSON.stringify(authData.user));
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error('Google auth error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const login = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => {
+      console.error('Google login failed');
+      window.dispatchEvent(new CustomEvent('googleAuthError', { detail: { error: 'Google login failed' } }));
+    },
+    flow: 'implicit',
+  });
 
   return (
     <Button
       type="button"
       variant="outline"
-      className="w-full flex items-center justify-center gap-3 py-6 border-slate-300 hover:bg-slate-50 transition-colors"
-      onClick={handleGoogleSignIn}
+      className="w-full flex items-center justify-center gap-3 py-6 border-slate-300 hover:bg-slate-50 transition-colors disabled:opacity-50"
+      onClick={() => login()}
+      disabled={isLoading}
       data-testid="google-signin-btn"
       aria-label={getButtonText(mode)}
     >
-      <GoogleIcon />
+      {isLoading ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : (
+        <GoogleIcon />
+      )}
       <span className="text-slate-700 font-medium">
-        {getButtonText(mode)}
+        {isLoading ? 'Cargando...' : getButtonText(mode)}
       </span>
     </Button>
   );

@@ -477,43 +477,27 @@ class EmailService:
         Returns:
             Resend API response or None
         """
-        ticket_list = ", ".join([f"#{n}" for n in sorted(ticket_numbers)])
+        try:
+            ticket_list = ", ".join([f"#{n}" for n in sorted(ticket_numbers)])
 
-        content = f"""
-            <p>Hola <strong>{buyer_name}</strong>,</p>
-            <p>Hemos reservado los siguientes boletos para ti:</p>
-            <div style="background: #fef3c7; padding: 20px; border-radius: 10px; 
-                        margin: 20px 0; border-left: 4px solid #f59e0b;">
-                <p style="margin: 0 0 10px 0;"><strong>Rifa:</strong> {raffle_title}</p>
-                <p style="margin: 0 0 10px 0;"><strong>Boletos reservados:</strong> {ticket_list}</p>
-                <p style="margin: 0 0 10px 0;"><strong>Total a pagar:</strong> ${total_amount:.2f} MXN</p>
-            </div>
-            <p style="color: #b45309;">
-                <strong>⚠️ Importante:</strong> Tu reserva expira en 48 horas. 
-                Contacta al organizador para coordinar el pago en efectivo antes de esa fecha.
-            </p>
-        """
-
-        html = self.create_base_template("Boletos reservados", content)
-        return await self.send_email(
-            to_email, f"⏰ Boletos reservados - {raffle_title}", html
-        )
-
-    async def send_test_email(
-        self,
-        to_email: str
-    ) -> Optional[dict]:
-        """
-        Send a simple test email to verify the email service is working.
-        """
-
-        content = f"""
-            <p>Hola <strong>{to_email}</strong>,</p>
-            <p>Este es un email de prueba para verificar que el servicio de 
-               correo electrónico está funcionando correctamente.</p>
-        """
-
-        html = self.create_base_template("¡Email de prueba!", content)
-        return await self.send_email(
-            to_email, "📧 Prueba de servicio de correo electrónico", html
-        )
+            content = f"""
+                <p>Hola <strong>{buyer_name}</strong>,</p>
+                <p>Hemos reservado los siguientes boletos para ti:</p>
+                <div style="background: #fef3c7; padding: 20px; border-radius: 10px; 
+                            margin: 20px 0; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0 0 10px 0;"><strong>Rifa:</strong> {raffle_title}</p>
+                    <p style="margin: 0 0 10px 0;"><strong>Boletos reservados:</strong> {ticket_list}</p>
+                    <p style="margin: 0 0 10px 0;"><strong>Total a pagar:</strong> ${total_amount:.2f} MXN</p>
+                </div>
+                <p style="color: #b45309;">
+                    <strong>⚠️ Importante:</strong> Tu reserva expira en 48 horas. 
+                    Tu pago puede tardar hasta 24 horas en ser procesado. En cuanto confirmemos tu pago, te enviaremos otro email para avisarte que tus boletos están oficialmente comprados. ¡Gracias por tu paciencia!
+                </p>
+            """
+            html = self.create_base_template("Boletos reservados", content)
+            return await self.send_email(
+                to_email, f"⏰ Boletos reservados - {raffle_title}", html
+            )
+        except Exception as e:
+            logger.error(f"Error sending cash order created email: {e}")
+            return None

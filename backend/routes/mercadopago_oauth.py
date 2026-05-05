@@ -14,7 +14,7 @@ Endpoints:
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import RedirectResponse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import uuid
 import logging
 
@@ -56,7 +56,9 @@ async def initiate_oauth_flow(current_user: dict = Depends(get_current_user)):
                 "user_id": current_user["id"],
                 "code_verifier": code_verifier,
                 "created_at": datetime.now(timezone.utc).isoformat(),
-                "expires_at": (datetime.now(timezone.utc)).isoformat(),
+                "expires_at": (
+                    datetime.now(timezone.utc) + timedelta(minutes=10)
+                ).isoformat(),
             }
         )
 
@@ -110,13 +112,29 @@ async def oauth_callback(
             )
 
         # Exchange code for tokens with PKCE
-        token_response = await oauth_service.exchange_code_for_token(code, code_verifier)
+        token_response = await oauth_service.exchange_code_for_token(
+            code, code_verifier
+        )
+
+        logger.debug(f"OAuth token response keys: {list(token_response.keys())}")
+        logger.debug(f"Full token response: {token_response}")
 
         access_token = token_response.get("access_token")
         refresh_token = token_response.get("refresh_token")
         public_key = token_response.get("public_key")
         mp_user_id = token_response.get("user_id")
         expires_in = token_response.get("expires_in", 21600)  # Default 6 hours
+
+        logger.warning(f"Public key from OAuth response: {public_key}")
+
+        # If public_key not in token response, fetch it via the API
+        if not public_key and access_token:
+            logger.info("Fetching public_key from MercadoPago API...")
+            public_key = await oauth_service.get_public_key(access_token)
+            if public_key:
+                logger.info(f"Successfully obtained public_key: {public_key[:20]}...")
+            else:
+                logger.warning("Could not obtain public_key from any source")
 
         if not access_token or not refresh_token:
             raise ValueError("Missing required tokens in response")

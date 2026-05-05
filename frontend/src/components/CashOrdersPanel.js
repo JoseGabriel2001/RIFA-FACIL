@@ -4,11 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Loader2, 
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  Loader2,
   Banknote,
   User,
   Mail,
@@ -60,7 +60,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
         { order_id: orderId, action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success(action === 'approve' ? 'Pago aprobado' : 'Orden rechazada');
       fetchOrders();
       onOrderProcessed?.();
@@ -94,18 +94,18 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
     const now = new Date();
     const expires = new Date(expiresAt);
     const diff = expires - now;
-    
+
     if (diff <= 0) return 'Expirado';
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (hours > 0) return `${hours}h ${minutes}m restantes`;
     return `${minutes}m restantes`;
   };
 
-  const pendingOrders = orders.filter(o => o.status === 'pending');
-  const otherOrders = orders.filter(o => o.status !== 'pending');
+  const pendingOrders = orders.filter(o => o.payment_status === 'pending');
+  const otherOrders = orders.filter(o => o.payment_status !== 'pending');
 
   if (loading) {
     return (
@@ -147,7 +147,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
                           {getTimeRemaining(order.expires_at)}
                         </span>
                       </div>
-                      
+
                       <div className="flex flex-wrap items-center gap-4 text-sm">
                         <span className="flex items-center gap-1 font-medium">
                           <User className="w-4 h-4 text-slate-400" />
@@ -249,7 +249,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
               {confirmAction?.action === 'approve' ? '¿Aprobar este pago?' : '¿Rechazar esta orden?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmAction?.action === 'approve' 
+              {confirmAction?.action === 'approve'
                 ? 'Los boletos serán marcados como vendidos y el comprador recibirá una notificación.'
                 : 'Los boletos reservados quedarán disponibles nuevamente para otros compradores.'}
             </AlertDialogDescription>

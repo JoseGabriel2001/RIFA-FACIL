@@ -10,7 +10,7 @@
       },
       {
         "endpoint": "/api/payments/mercadopago/create-preference",
-        "issue": "Returns 503 when MERCADOPAGO_ACCESS_TOKEN not configured (expected behavior)",
+        "issue": "Returns 503 when MERCADOPAGO_ACCESS_TOKEN_PRO not configured (expected behavior)",
         "expected_behavior": true
       }
     ]
@@ -90,7 +90,7 @@
     "frontend_pages": "Landing, Login, Register, Dashboard, Create Raffle, Public Raffle, Payment Dialog"
   },
   "mocked_apis": {
-    "MercadoPago": "Returns 503 - MERCADOPAGO_ACCESS_TOKEN not configured",
+    "MercadoPago": "Returns 503 - MERCADOPAGO_ACCESS_TOKEN_PRO not configured",
     "Stripe": "Returns 503 - requires emergentintegrations package",
     "PayPal": "Returns 503 - PAYPAL_CLIENT_ID not configured"
   }

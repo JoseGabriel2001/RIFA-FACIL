@@ -16,7 +16,9 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import TicketGrid from '../components/TicketGrid';
-import PaymentMethodSelector from '../components/PaymentMethodSelector';  // ← NUEVO
+import PaymentMethodSelector from '../components/PaymentMethodSelector';
+import CardPaymentBrick from '../components/CardPaymentBrick';
+import CashPaymentDisplay from '../components/CashPaymentDisplay';
 import { copyToClipboard } from '../utils/helpers';
 import {
   Share2,
@@ -44,7 +46,7 @@ const PublicRaffle = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card');  // ← NUEVO DEFAULT
+  const [paymentMethod, setPaymentMethod] = useState('');  // None selected initially
   const [buyerInfo, setBuyerInfo] = useState({
     name: '',
     email: '',
@@ -57,6 +59,7 @@ const PublicRaffle = () => {
   const fetchRaffle = useCallback(async () => {
     try {
       const response = await axios.get(`${API}/public/raffle/${shareCode}`);
+      console.log('Raffle data:', response.data);
       setRaffle(response.data);
     } catch (error) {
       toast.error('Rifa no encontrada');
@@ -86,8 +89,26 @@ const PublicRaffle = () => {
   };
 
   const handlePayment = async () => {
-    if (!buyerInfo.name || !buyerInfo.email) {
-      toast.error('Por favor completa tu nombre y email');
+    // Validate buyer info and payment method are filled
+    if (!buyerInfo.name || !buyerInfo.email || !buyerInfo.phone) {
+      toast.error('Por favor completa tu nombre, correo y teléfono');
+      return;
+    }
+
+    if (!paymentMethod) {
+      toast.error('Por favor selecciona un método de pago');
+      return;
+    }
+
+    // Only used for transfer and wallet (Checkout Pro flow)
+    if (paymentMethod === 'card' || paymentMethod === 'cash') {
+      // These are handled by their respective components
+      return;
+    }
+
+    // Checkout Pro flow for transfer/wallet
+    if (!buyerInfo.name || !buyerInfo.email || !buyerInfo.phone) {
+      toast.error('Por favor completa tu nombre, correo y teléfono');
       return;
     }
 
@@ -102,7 +123,6 @@ const PublicRaffle = () => {
         buyer_phone: buyerInfo.phone,
         origin_url: window.location.origin
       });
-      console.log('Payment response:', response.data);
 
       const checkoutUrl = response.data.init_point || response.data.sandbox_init_point;
       if (checkoutUrl) {
@@ -116,6 +136,25 @@ const PublicRaffle = () => {
       toast.error(message);
       setProcessing(false);
     }
+  };
+
+  const handlePaymentSuccess = (data) => {
+    toast.success('¡Pago completado exitosamente!');
+    setPurchaseDialogOpen(false);
+    setSelectedTickets([]);
+    setBuyerInfo({ name: '', email: '', phone: '' });
+    fetchRaffle(); // Refresh raffle data
+  };
+
+  const handlePaymentSuccessCash = (data) => {
+    toast.success('¡Pago completado exitosamente!');
+    setSelectedTickets([]);
+    setBuyerInfo({ name: '', email: '', phone: '' });
+    fetchRaffle(); // Refresh raffle data
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment error:', error);
   };
 
 
@@ -360,38 +399,66 @@ const PublicRaffle = () => {
               <PaymentMethodSelector
                 value={paymentMethod}
                 onChange={setPaymentMethod}
+                buyerInfo={buyerInfo}
+                isDisabled={!buyerInfo.name || !buyerInfo.email || !buyerInfo.phone}
               />
 
-              {/* 3. TOTAL A PAGAR */}
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total a pagar:</span>
-                  <span className="text-2xl font-bold text-slate-900">${totalAmount.toFixed(2)} MXN</span>
-                </div>
-              </div>
-            </div>
+              {/* Conditional Rendering based on payment method */}
+              {paymentMethod === 'card' && (
+                <CardPaymentBrick
+                  raffle={raffle}
+                  selectedTickets={selectedTickets}
+                  buyerInfo={buyerInfo}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              )}
 
-            {/* 4. BOTÓN DE ACCIÓN */}
-            <DialogFooter>
-              <Button
-                className="w-full btn-primary text-lg py-6"
-                onClick={handlePayment}
-                disabled={processing || !buyerInfo.name || !buyerInfo.email}
-                data-testid="pay-btn"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Continuar al pago
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
+              {paymentMethod === 'cash' && (
+                <CashPaymentDisplay
+                  raffle={raffle}
+                  selectedTickets={selectedTickets}
+                  buyerInfo={buyerInfo}
+                  onSuccess={handlePaymentSuccessCash}
+                  onError={handlePaymentError}
+                />
+              )}
+
+              {/* For transfer and wallet, show total and button */}
+              {(paymentMethod === 'transfer' || paymentMethod === 'wallet') && (
+                <>
+                  {/* 3. TOTAL A PAGAR */}
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600">Total a pagar:</span>
+                      <span className="text-2xl font-bold text-slate-900">${totalAmount.toFixed(2)} MXN</span>
+
+                    </div>
+                  </div>
+
+                  {/* 4. BOTÓN DE ACCIÓN */}
+                  {/* Button for Checkout Pro */}
+                  <Button
+                    className="w-full btn-primary text-lg py-6"
+                    onClick={handlePayment}
+                    disabled={processing || !buyerInfo.name || !buyerInfo.email}
+                    data-testid="pay-btn"
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        Continuar al pago
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>

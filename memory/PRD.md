@@ -152,7 +152,7 @@ Crear una app web para hacer sorteos y rifas con panel de administrador, landing
 - `JWT_SECRET`: Configurado
 
 ### Pendientes ⏳
-- `MERCADOPAGO_ACCESS_TOKEN`: Requiere usuario
+- `MERCADOPAGO_ACCESS_TOKEN_PRO`: Requiere usuario
 - `STRIPE_API_KEY`: Test disponible
 - `PAYPAL_CLIENT_ID/SECRET`: Pendiente
 

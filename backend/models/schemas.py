@@ -364,3 +364,43 @@ class MercadoPagoOAuthStatusResponse(BaseModel):
     connected: bool = Field(..., description="Whether user has connected their MP account")
     mp_user_id: Optional[int] = Field(None, description="MercadoPago user ID if connected")
     connected_at: Optional[str] = Field(None, description="ISO timestamp of connection")
+
+
+# =============================================================================
+# CARD PAYMENT (CHECKOUT API) MODELS
+# =============================================================================
+
+class CardPaymentRequest(BaseModel):
+    """Request for processing card payment via Checkout API."""
+    raffle_id: str = Field(..., description="Target raffle ID")
+    ticket_numbers: List[int] = Field(..., min_length=1, description="Tickets to purchase")
+    buyer_name: str = Field(..., min_length=1, description="Buyer's full name")
+    buyer_email: EmailStr = Field(..., description="Buyer's email")
+    buyer_phone: Optional[str] = Field(None, description="Buyer's phone")
+    token: str = Field(..., description="Card token from MercadoPago Brick")
+    payment_method_id: str = Field(..., description="Payment method ID (e.g., visa, master)")
+    issuer_id: Optional[str] = Field(None, description="Issuer ID")
+    installments: int = Field(1, ge=1, le=12, description="Number of installments")
+    identification_type: Optional[str] = Field(None, description="ID type (e.g., RFC, CURP) - Optional")
+    identification_number: Optional[str] = Field(None, description="ID number - Optional")
+
+
+class CashPaymentRequest(BaseModel):
+    """Request for generating cash payment ticket."""
+    raffle_id: str = Field(..., description="Target raffle ID")
+    ticket_numbers: List[int] = Field(..., min_length=1, description="Tickets to purchase")
+    buyer_name: str = Field(..., min_length=1, description="Buyer's full name")
+    buyer_email: EmailStr = Field(..., description="Buyer's email")
+    buyer_phone: Optional[str] = Field(None, description="Buyer's phone")
+
+
+class CashPaymentResponse(BaseModel):
+    """Response after creating cash payment."""
+    transaction_id: str = Field(..., description="Transaction ID")
+    payment_id: str = Field(..., description="MercadoPago payment ID")
+    ticket_url: Optional[str] = Field(None, description="URL to download ticket PDF")
+    barcode: Optional[str] = Field(None, description="Barcode for payment")
+    external_resource_url: Optional[str] = Field(None, description="External payment URL")
+    expiration_date: str = Field(..., description="Payment expiration date")
+    amount: float = Field(..., description="Total amount")
+    message: str = Field(..., description="Instructions message")

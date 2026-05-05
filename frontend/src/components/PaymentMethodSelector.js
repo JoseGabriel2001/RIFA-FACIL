@@ -17,16 +17,26 @@ import { CreditCard, Building2, Wallet, Store } from 'lucide-react';
  * - cash: Cash payments (OXXO, 7-Eleven, etc)
  */
 
-const PaymentMethodSelector = ({ value, onChange }) => {
+const PaymentMethodSelector = ({ value, onChange, buyerInfo, isDisabled }) => {
     const paymentMethods = [
         {
             id: 'card',
             name: 'Tarjeta de Crédito / Débito',
-            description: 'Paga con tu tarjeta de crédito o débito',
+            description: 'Paga directamente con tu tarjeta',
             icon: CreditCard,
             iconBg: 'bg-blue-100',
             iconColor: 'text-blue-500',
-            badge: 'Más popular'
+            badge: 'Más popular',
+            flow: "embedded" // Indicates this will use the embedded card form
+        },
+        {
+            id: 'cash',
+            name: 'Efectivo (OXXO)',
+            description: 'Genera un código para pagar en tienda',
+            icon: Store,
+            iconBg: 'bg-orange-100',
+            iconColor: 'text-orange-500',
+            flow: 'embedded' // Sin redirección
         },
         {
             id: 'transfer',
@@ -34,36 +44,34 @@ const PaymentMethodSelector = ({ value, onChange }) => {
             description: 'Transferencia o SPEI desde tu banco',
             icon: Building2,
             iconBg: 'bg-green-100',
-            iconColor: 'text-green-500'
+            iconColor: 'text-green-500',
+            flow: 'redirect' // Requiere redirección a la plataforma de pago
         },
         {
             id: 'wallet',
-            name: 'Saldo en Mercado Pago',
+            name: 'Mercado Pago',
             description: 'Usa tu saldo de Mercado Pago',
             icon: Wallet,
             iconBg: 'bg-yellow-100',
-            iconColor: 'text-yellow-600'
-        },
-        {
-            id: 'cash',
-            name: 'Efectivo (OXXO, 7-Eleven)',
-            description: 'Genera un código para pagar en tienda',
-            icon: Store,
-            iconBg: 'bg-orange-100',
-            iconColor: 'text-orange-500'
+            iconColor: 'text-yellow-600',
+            flow: 'redirect' // Requiere redirección a la plataforma de pago
         }
     ];
 
     return (
         <div className="space-y-3">
-            <Label className="text-base font-semibold text-slate-900">
-                Selecciona tu método de pago
-            </Label>
-            <p className="text-sm text-slate-600 mb-4">
-                Todos los pagos son procesados de forma segura por Mercado Pago
-            </p>
+            <div>
+                <Label className="text-base font-semibold text-slate-900">
+                    Selecciona tu método de pago
+                </Label>
+                {isDisabled && (
+                    <p className="text-sm text-orange-600 mt-1">
+                        ⚠️ Completa primero tu nombre, correo y teléfono para seleccionar un método de pago
+                    </p>
+                )}
+            </div>
 
-            <RadioGroup value={value} onValueChange={onChange}>
+            <RadioGroup value={value} onValueChange={isDisabled ? undefined : onChange} disabled={isDisabled}>
                 <div className="space-y-3">
                     {paymentMethods.map((method) => {
                         const Icon = method.icon;
@@ -73,15 +81,19 @@ const PaymentMethodSelector = ({ value, onChange }) => {
                             <label
                                 key={method.id}
                                 htmlFor={method.id}
-                                className={`
-                  flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
-                  ${isSelected
-                                        ? 'border-orange-500 bg-orange-50'
-                                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                                    }
-                `}
+                                className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${isDisabled
+                                        ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-100'
+                                        : isSelected
+                                            ? 'border-orange-500 bg-orange-50 cursor-pointer'
+                                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 cursor-pointer'
+                                    }`}
                             >
-                                <RadioGroupItem value={method.id} id={method.id} className="mt-0.5" />
+                                <RadioGroupItem
+                                    value={method.id}
+                                    id={method.id}
+                                    className="mt-0.5"
+                                    disabled={isDisabled}
+                                />
 
                                 <div className={`w-12 h-12 ${method.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
                                     <Icon className={`w-6 h-6 ${method.iconColor}`} />
@@ -95,11 +107,16 @@ const PaymentMethodSelector = ({ value, onChange }) => {
                                                 {method.badge}
                                             </span>
                                         )}
+                                        {/* {method.flow === 'embedded' && (
+                                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                                Sin redirección
+                                            </span>
+                                        )} */}
                                     </div>
                                     <p className="text-sm text-slate-600 mt-0.5">{method.description}</p>
                                 </div>
 
-                                {isSelected && (
+                                {isSelected && !isDisabled && (
                                     <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -111,14 +128,6 @@ const PaymentMethodSelector = ({ value, onChange }) => {
                     })}
                 </div>
             </RadioGroup>
-
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-900">
-                    <strong>💡 Nota:</strong> Todos los métodos de pago son seguros y están respaldados por Mercado Pago.
-                    {value === 'cash' && ' Con efectivo, tendrás 3 días para pagar en tienda.'}
-                    {value === 'card' && ' Puedes pagar hasta en 12 meses sin intereses con bancos participantes.'}
-                </p>
-            </div>
         </div>
     );
 };

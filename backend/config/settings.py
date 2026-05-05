@@ -34,12 +34,14 @@ class Settings:
     RESEND_API_KEY: str = os.environ.get("RESEND_API_KEY", "")
     SENDER_EMAIL: str = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 
-    # PayPal Configuration
+    # PayPal Configuration      
     PAYPAL_CLIENT_ID: str = os.environ.get("PAYPAL_CLIENT_ID", "")
     PAYPAL_SECRET: str = os.environ.get("PAYPAL_SECRET", "")
 
     # MercadoPago Configuration
-    MERCADOPAGO_ACCESS_TOKEN: str = os.environ.get("MERCADOPAGO_ACCESS_TOKEN", "")
+    MERCADOPAGO_ACCESS_TOKEN_PRO: str = os.environ.get(
+        "MERCADOPAGO_ACCESS_TOKEN_PRO", ""
+    )
 
     # File Upload Configuration
     UPLOADS_DIR: Path = ROOT_DIR / "uploads"
@@ -55,7 +57,7 @@ class Settings:
     NGROK_FRONTEND_URL: str = os.environ.get(
         "NGROK_FRONTEND_URL", "http://localhost:3000"
     )
-    
+
     BACKEND_URL: str = os.environ.get("BACKEND_URL", "http://localhost:8000")
     FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
