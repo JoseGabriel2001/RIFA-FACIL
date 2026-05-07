@@ -44,6 +44,7 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
+    "https://rifa-facil-example-frontend.onrender.com"
 ]
 
 # =============================================================================
