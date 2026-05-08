@@ -51,6 +51,9 @@ class EmailService:
         else:
             logger.warning("Email service disabled - no API key configured")
 
+
+
+
     async def send_email(
         self, to_email: str, subject: str, html_content: str
     ) -> Optional[dict]:

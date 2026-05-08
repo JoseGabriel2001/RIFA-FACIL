@@ -100,7 +100,7 @@ const GoogleSignInButton = ({ mode = 'login' }) => {
       const { access_token } = response;
 
       // Send to backend for validation and user creation
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
       const authResponse = await fetch(`${backendUrl}/api/auth/google/token`, {
         method: 'POST',
         headers: {

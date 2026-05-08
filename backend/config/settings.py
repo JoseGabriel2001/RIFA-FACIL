@@ -52,14 +52,14 @@ class Settings:
     SUPER_ADMIN_EMAILS: set = {"mtortb@gmail.com"}
 
     NGROK_BACKEND_URL: str = os.environ.get(
-        "NGROK_BACKEND_URL", "http://localhost:8000"
+        "NGROK_BACKEND_URL", ""
     )
     NGROK_FRONTEND_URL: str = os.environ.get(
-        "NGROK_FRONTEND_URL", "http://localhost:3000"
+        "NGROK_FRONTEND_URL", ""
     )
 
-    BACKEND_URL: str = os.environ.get("BACKEND_URL", "http://localhost:8000")
-    FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    BACKEND_URL: str = os.environ.get("BACKEND_URL", "")
+    FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "")
 
     ENVIRONMENT: str = os.environ.get("ENVIRONMENT", "development")
 

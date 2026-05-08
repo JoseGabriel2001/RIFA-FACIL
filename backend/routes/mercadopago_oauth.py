@@ -17,6 +17,7 @@ from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta, timezone
 import uuid
 import logging
+from config.settings import settings
 
 from config import db
 from dependencies import get_current_user
@@ -92,6 +93,7 @@ async def oauth_callback(
     Returns:
         Redirect to frontend with success/error status
     """
+
     try:
         # Validate state and get associated user with code_verifier
         state_doc = await db.oauth_states.find_one({"state": state}, {"_id": 0})
@@ -99,7 +101,7 @@ async def oauth_callback(
         if not state_doc:
             logger.error(f"Invalid state parameter: {state}")
             return RedirectResponse(
-                url=f"{request.headers.get('origin', 'http://localhost:3000')}/oauth-error?error=invalid_state"
+                url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=invalid_state"
             )
 
         user_id = state_doc["user_id"]
@@ -108,7 +110,7 @@ async def oauth_callback(
         if not code_verifier:
             logger.error(f"Missing code_verifier for state: {state}")
             return RedirectResponse(
-                url=f"{request.headers.get('origin', 'http://localhost:3000')}/oauth-error?error=missing_verifier"
+                url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=missing_verifier"
             )
 
         # Exchange code for tokens with PKCE
@@ -170,18 +172,18 @@ async def oauth_callback(
         logger.info(f"OAuth successful for user {user_id}, MP user {mp_user_id}")
 
         # Redirect to frontend success page
-        frontend_url = request.headers.get("origin", "http://localhost:3000")
+        frontend_url = request.headers.get("origin", settings.FRONTEND_URL)
         return RedirectResponse(url=f"{frontend_url}/oauth-success")
 
     except ValueError as e:
         logger.error(f"OAuth callback validation error: {str(e)}")
         return RedirectResponse(
-            url=f"{request.headers.get('origin', 'http://localhost:3000')}/oauth-error?error=validation_failed"
+            url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=validation_failed"
         )
     except Exception as e:
         logger.error(f"OAuth callback error: {str(e)}")
         return RedirectResponse(
-            url=f"{request.headers.get('origin', 'http://localhost:3000')}/oauth-error?error=unexpected_error"
+            url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=unexpected_error"
         )
 
 
