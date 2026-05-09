@@ -27,7 +27,7 @@ const Landing = () => {
     {
       icon: <Shield className="w-6 h-6" />,
       title: 'Pagos Seguros',
-      description: 'Integración con Stripe y PayPal para transacciones confiables.'
+      description: 'Integración con Mercado pago para transacciones confiables.'
     }
   ];
 
@@ -88,7 +88,7 @@ const Landing = () => {
             <div className="relative animate-fade-in-up stagger-2">
               <div className="absolute inset-0 bg-orange-500/10 rounded-3xl blur-3xl" />
               <img 
-                src="https://images.unsplash.com/photo-1694626007251-8dd2cd25b89c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwzfHxoYXBweSUyMHBlb3BsZSUyMGNlbGVicmF0aW5nJTIwd2lubmluZyUyMGxvdHRlcnklMjBjb25mZXR0aXxlbnwwfHx8fDE3NzEzNzkxNTB8MA&ixlib=rb-4.1.0&q=85"
+                src="images/people_celebrate.jpg"
                 alt="Personas celebrando"
                 className="relative rounded-3xl shadow-2xl w-full h-auto max-h-[500px] object-cover"
               />
@@ -137,7 +137,7 @@ const Landing = () => {
                 {[
                   { step: '01', title: 'Crea tu rifa', desc: 'Define el premio, precio y cantidad de boletos disponibles.' },
                   { step: '02', title: 'Comparte el link', desc: 'Envía el enlace único a tus compradores por WhatsApp, redes sociales, etc.' },
-                  { step: '03', title: 'Recibe pagos', desc: 'Los compradores pagan de forma segura con Stripe o PayPal.' },
+                  { step: '03', title: 'Recibe pagos', desc: 'Los compradores pagan de forma segura con tarjeta de crédito/débito, transferencia, efectivo y Mercado Pago.' },
                   { step: '04', title: 'Realiza el sorteo', desc: 'Selecciona al ganador manual o aleatoriamente y notifícalo.' }
                 ].map((item, index) => (
                   <div key={index} className="flex gap-4" data-testid={`step-${index}`}>
@@ -155,7 +155,7 @@ const Landing = () => {
             
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1760278041797-2a21a385f17c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBjbGVhbiUyMGhvbWUlMjBvZmZpY2UlMjBkZXNrJTIwc2V0dXB8ZW58MHx8fHwxNzcxMzc5MTUyfDA&ixlib=rb-4.1.0&q=85"
+                src="images/dashboard.jpg"
                 alt="Dashboard"
                 className="rounded-2xl shadow-xl w-full"
               />

@@ -96,7 +96,7 @@ const PrivacyPolicy = () => {
                 de marketing. Solo compartimos información con:
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4 mt-4">
-                <li>Procesadores de pago (MercadoPago, Stripe) para completar transacciones</li>
+                <li>Procesadores de pago (MercadoPago) para completar transacciones</li>
                 <li>Organizadores de rifas en las que participas (nombre y datos de contacto)</li>
                 <li>Autoridades cuando sea requerido por ley</li>
               </ul>

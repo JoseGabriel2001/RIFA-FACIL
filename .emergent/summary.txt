@@ -14,7 +14,7 @@ El usuario quiere crear una aplicación web para realizar sorteos y rifas.
 3.  **Funcionalidades Adicionales Implementadas/Solicitadas:**
     *   **Cuentas de Usuario:** Sistema de registro e inicio de sesión (JWT y Google Auth). Los usuarios pueden crear y participar en rifas.
     *   **Planes de Suscripción:** Un plan gratuito (hasta 2 rifas activas) y un plan de pago (rifas ilimitadas). El usuario  es súper administrador sin restricciones.
-    *   **Métodos de Pago:** Integración con Stripe, PayPal (pendientes) y un sistema de pago en efectivo (implementado).
+    *   **Métodos de Pago:** Integración con tarjeta de credito/debito, mercado pago, transferencia y un sistema de pago en efectivo (implementado).
     *   **Pago en Efectivo:** Los usuarios pueden reservar boletos, generando una orden pendiente. El administrador debe aprobar la orden manualmente. Las órdenes no pagadas en 48 horas expiran.
     *   **Asignación de Boletos:** El administrador puede asignar boletos directamente.
     *   **Sorteo con Ruleta Multi-giro:** Una ruleta animada con sonido. El administrador configura el número de giros, y se debe presionar el botón de girar esa cantidad de veces para revelar al ganador.
@@ -79,7 +79,7 @@ Se ha desarrollado una aplicación full-stack (React + FastAPI + MongoDB) que cu
 *   **Upcoming Tasks:**
     *   **P1: Implementar Lógica de Planes de Suscripción:** Finalizar el Issue 2 para restringir a los usuarios del plan gratuito a 2 rifas activas.
 *   **Future Tasks:**
-    *   **P2: Implementación Completa de Pagos (Stripe/PayPal):** Integrar los flujos de pago para que los usuarios puedan actualizar a un plan de pago.
+    *   **P2: Implementación Completa de Pagos (Mercado pago):** Integrar los flujos de pago para que los usuarios puedan actualizar a un plan de pago.
     *   **P2: Integración con WhatsApp:** Solicitada por el usuario pero pospuesta. Para notificar al ganador.
     *   **P3: Refactorización del Backend:** Dividir el archivo monolítico  en una estructura de módulos (routers, models, services) para mejorar la mantenibilidad.
 
@@ -166,13 +166,13 @@ Se ha desarrollado una aplicación full-stack (React + FastAPI + MongoDB) que cu
 
 **Project Health Check:**
 *   **Broken:** La funcionalidad de inicio de sesión con Google está a medio implementar.
-*   **Mocked:** La lógica de los planes de suscripción no está implementada para usuarios regulares. Las integraciones de pago con Stripe y PayPal son solo placeholders y no tienen un flujo funcional.
+*   **Mocked:** La lógica de los planes de suscripción no está implementada para usuarios regulares. Las integraciones de pago con mercado pago son solo placeholders y no tienen un flujo funcional.
 
 **3rd Party Integrations**
 *   **Emergent Google Auth:** En progreso. Utiliza credenciales gestionadas por Emergent.
 *   **Resend (Email):** Integrado. Utiliza la API Key del usuario.
 *   **Capacitor (Mobile App):** Instalado y configurado.
-*   **Stripe (Payments):** Playbook obtenido. Implementación pendiente. Requiere API Key del usuario.
+*   **Mercado pago (Payments):** Playbook obtenido. Implementación pendiente. Requiere API Key del usuario.
 *   **PayPal (Payments):** Playbook obtenido. Implementación pendiente. Requiere API Key del usuario.
 
 **Testing status**

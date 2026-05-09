@@ -107,11 +107,11 @@
   },
   "image_urls": {
     "hero_crowd": {
-      "url": "https://images.unsplash.com/photo-1694626007251-8dd2cd25b89c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwzfHxoYXBweSUyMHBlb3BsZSUyMGNlbGVicmF0aW5nJTIwd2lubmluZyUyMGxvdHRlcnklMjBjb25mZXR0aXxlbnwwfHx8fDE3NzEzNzkxNTB8MA&ixlib=rb-4.1.0&q=85",
+      "url": "images/people_celebrate.jpg",
       "description": "A crowd of people celebrating with confetti - Use for Hero Section background or main visual"
     },
     "feature_office": {
-      "url": "https://images.unsplash.com/photo-1760278041797-2a21a385f17c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBjbGVhbiUyMGhvbWUlMjBvZmZpY2UlMjBkZXNrJTIwc2V0dXB8ZW58MHx8fHwxNzcxMzc5MTUyfDA&ixlib=rb-4.1.0&q=85",
+      "url": "images/office.jpg",
       "description": "Modern home office - Use for 'Organizer' dashboard features"
     },
     "ticket_holding": {

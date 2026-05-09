@@ -41,7 +41,7 @@ const Pricing = () => {
       features: [
         'Hasta 2 rifas activas',
         'Hasta 100 boletos por rifa',
-        'Pagos con Stripe',
+        'Pagos con tarjeta de crédito/débito, transferencia, efectivo y Mercado Pago.',
         'Link compartible',
         'Notificaciones básicas'
       ],
@@ -57,7 +57,7 @@ const Pricing = () => {
       features: [
         'Rifas ilimitadas',
         'Hasta 1000 boletos por rifa',
-        'Stripe + PayPal',
+        'Pagos con tarjeta de crédito/débito, transferencia, efectivo y Mercado Pago.',
         'Link compartible personalizado',
         'Notificaciones avanzadas',
         'Soporte prioritario',

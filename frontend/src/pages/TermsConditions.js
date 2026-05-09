@@ -118,8 +118,7 @@ const TermsConditions = () => {
                 6. Pagos y Transacciones
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Los pagos se procesan a través de proveedores de pago terceros (MercadoPago, 
-                Stripe). RifaFacil no almacena información de tarjetas de crédito. Las 
+                Los pagos se procesan a través de proveedores de pago terceros (MercadoPago). RifaFacil no almacena información de tarjetas de crédito. Las 
                 transacciones están sujetas a los términos y condiciones del proveedor de 
                 pago correspondiente.
               </p>

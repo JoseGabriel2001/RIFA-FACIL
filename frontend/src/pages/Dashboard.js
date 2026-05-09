@@ -63,7 +63,8 @@ const Dashboard = () => {
         axios.get(`${API}/stats`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setRaffles(rafflesRes.data);
-      setStats(statsRes.data);
+      setStats(statsRes.data)
+      console.log('Raffles:', rafflesRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
