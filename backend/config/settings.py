@@ -34,7 +34,7 @@ class Settings:
     RESEND_API_KEY: str = os.environ.get("RESEND_API_KEY", "")
     SENDER_EMAIL: str = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 
-    # PayPal Configuration      
+    # PayPal Configuration
     PAYPAL_CLIENT_ID: str = os.environ.get("PAYPAL_CLIENT_ID", "")
     PAYPAL_SECRET: str = os.environ.get("PAYPAL_SECRET", "")
 
@@ -51,12 +51,8 @@ class Settings:
     # Super Admin emails (bypasses plan restrictions)
     SUPER_ADMIN_EMAILS: set = {"mtortb@gmail.com"}
 
-    NGROK_BACKEND_URL: str = os.environ.get(
-        "NGROK_BACKEND_URL", ""
-    )
-    NGROK_FRONTEND_URL: str = os.environ.get(
-        "NGROK_FRONTEND_URL", ""
-    )
+    NGROK_BACKEND_URL: str = os.environ.get("NGROK_BACKEND_URL", "")
+    NGROK_FRONTEND_URL: str = os.environ.get("NGROK_FRONTEND_URL", "")
 
     BACKEND_URL: str = os.environ.get("BACKEND_URL", "")
     FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "")
