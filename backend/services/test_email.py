@@ -1,6 +1,6 @@
 from email_service import EmailService
 
-email_service = EmailService("re_Y3H65SAm_7GQNcCg9oosx9RSUMmaHmet8", "onboarding@resend.dev")
+email_service = EmailService("re_Y3H65SAm_7GQNcCg9oosx9RSUMmaHmet8", "enrique.flores@codicesoftware.mx")
 
 async def test_send_email():
     try: 
