@@ -64,7 +64,6 @@ const Dashboard = () => {
       ]);
       setRaffles(rafflesRes.data);
       setStats(statsRes.data)
-      console.log('Raffles:', rafflesRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
@@ -238,7 +237,7 @@ const Dashboard = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                           <span className="flex items-center gap-1">
                             <Ticket className="w-4 h-4" />
-                            {raffle.sold_tickets || 0}/{raffle.total_tickets} vendidos
+                            {raffle.sold_count || 0}/{raffle.total_tickets} vendidos
                           </span>
                           <span className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />

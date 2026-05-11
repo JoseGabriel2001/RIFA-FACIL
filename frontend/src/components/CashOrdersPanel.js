@@ -107,6 +107,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
   const pendingOrders = orders.filter(o => o.payment_status === 'pending');
   const otherOrders = orders.filter(o => o.payment_status !== 'pending');
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -141,7 +142,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        {getStatusBadge(order.status)}
+                        {getStatusBadge(order.payment_status)}
                         <span className="text-sm text-amber-600 font-medium">
                           <Clock className="w-4 h-4 inline mr-1" />
                           {getTimeRemaining(order.expires_at)}
@@ -226,7 +227,7 @@ const CashOrdersPanel = ({ raffleId, token, onOrderProcessed }) => {
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {getStatusBadge(order.status)}
+                      {getStatusBadge(order.payment_status)}
                       <span className="text-sm font-medium">{order.buyer_name}</span>
                       <span className="text-sm text-slate-500">
                         Boletos: {order.ticket_numbers.join(', ')}

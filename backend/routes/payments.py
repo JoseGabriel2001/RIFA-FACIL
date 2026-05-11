@@ -198,9 +198,9 @@ def _get_payment_methods_config(payment_method_type: str) -> dict:
             "payment_methods": {
                 "excluded_payment_types": [
                     {"id": "ticket"},  # No cash
-                    {"id": "credit_card"},  # No credit cards
-                    {"id": "debit_card"},  # No debit cards
-                    {"id": "prepaid_card"},  # No prepaid cards
+                    {"id": "credit_card"}  # No credit cards
+                    # {"id": "debit_card"},  # No debit cards
+                    # {"id": "prepaid_card"},  # No prepaid cards
                 ]
             }
         }
@@ -485,7 +485,7 @@ async def verify_mercadopago_payment(transaction_id: str):
     return {
         "status": transaction.get("payment_status", "pending"),
         "message": "Pago pendiente de confirmación",
-        "transaction_id": transaction_id,
+        "transaction_id": transaction_id
     }
 
 
@@ -502,23 +502,40 @@ async def mercadopago_webhook(request: Request):
         logger.info(f"MercadoPago webhook received: {body}")
 
         if body.get("type") == "payment":
-            payment_id = body.get("data", {}).get("id")
-
+            logger.info("Processing MercadoPago payment webhook...")
+            payment_id = None
+            if isinstance(body.get("data"), dict):
+                payment_id = body["data"].get("id")
+            # Fallbacks: top-level id or other common nesting
+            payment_id = payment_id or body.get("id") or body.get("data", {}).get("id") or (body.get("resource") or {}).get("id")
             if payment_id:
                 mp_sdk = get_mercadopago_sdk()
-                if mp_sdk:
-                    payment_response = mp_sdk.payment().get(payment_id)
-                    payment = payment_response.get("response", {})
+            
+                payment_response = mp_sdk.payment().get(payment_id)
+                payment = payment_response.get("response", {})
+                external_reference = payment.get("external_reference")
 
-                    external_reference = payment.get("external_reference")
+                if external_reference and payment.get("payment_type_id") == "ticket" and payment.get("status") == "cancelled":
 
-                    if external_reference and payment.get("status") == "approved":
-                        transaction = await db.payment_transactions.find_one(
-                            {"id": external_reference}, {"_id": 0}
+                    transaction = await db.payment_transactions.find_one(
+                        {"id": external_reference}, {"_id": 0}
+                    )
+
+                    ticket_numbers = transaction.get("ticket_numbers", []) if transaction else []
+
+                    for ticket_number in ticket_numbers:
+                        await db.raffles.update_one(
+                            {"id": transaction["raffle_id"], "tickets.number": ticket_number},
+                            {"$set": {"tickets.$.status": "available", "tickets.$.buyer_name": None, "tickets.$.buyer_email": None, "tickets.$.purchased_at": None}}
                         )
 
-                        if transaction and transaction.get("payment_status") != "paid":
-                            await _process_successful_payment(transaction, payment_id)
+                if external_reference and payment.get("status") == "approved":
+                    transaction = await db.payment_transactions.find_one(
+                        {"id": external_reference}, {"_id": 0}
+                    )
+
+                    if transaction and transaction.get("payment_status") != "paid":
+                        await _process_successful_payment(transaction, payment_id)
 
         return {"status": "received"}
 
@@ -1234,9 +1251,8 @@ async def generate_cash_payment(request: CashPaymentRequest):
     await db.payment_transactions.insert_one(transaction_doc)
 
     # Create cash payment via MercadoPago API
-    # vendor_sdk = mercadopago.SDK(mp_credentials["access_token"])
-    vendor_sdk = mercadopago.SDK("TEST-1794295438142925-110100-0cd13cfd69ff4ee8275abf28c261c7dd-1273765353"
-    )  
+    vendor_sdk = mercadopago.SDK(mp_credentials["access_token"])
+    # vendor_sdk = mercadopago.SDK("TEST-1794295438142925-110100-0cd13cfd69ff4ee8275abf28c261c7dd-1273765353")  
     # TODO: Remove this hardcoded test token and use the vendor's access token instead. This is just for testing purposes.
 
     payment_data = {
@@ -1267,7 +1283,6 @@ async def generate_cash_payment(request: CashPaymentRequest):
             logger.error(f"Invalid payment response from MercadoPago: {payment}")
             raise HTTPException(status_code=500, detail="Error generando el ticket de pago. Intenta de nuevo más tarde.")
 
-        logger.info(f"Datros del pago en efectivo {payment}")
 
         # Update transaction
         await db.payment_transactions.update_one(

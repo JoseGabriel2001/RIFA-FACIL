@@ -217,6 +217,20 @@ async def create_raffle(
     }
 
 
+@router.get("/check_mp_connection", response_model=dict)
+async def check_mp_connection(user: dict = Depends(get_current_user)):
+   """ Check MercadoPago connection status.
+   """
+   mp_connections = db.mp_oauth_credentials.find({"user_id": user["id"]}, {"_id": 0})
+
+   connections = await mp_connections.to_list(length=100)
+
+   if len(connections) == 0:
+       return {"connected": False, "message": "No hay conexión con MercadoPago", "conections": connections}
+   else:
+       return {"connected": True, "message": "Conexión con MercadoPago establecida", "conections": connections}
+
+
 @router.get("/raffles", response_model=List[dict])
 async def list_raffles(user: dict = Depends(get_current_user)):
     """
@@ -671,14 +685,15 @@ async def validate_order(
     if raffle["owner_id"] != user["id"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    order = await db.cash_orders.find_one(
+    order = await db.payment_transactions.find_one(
         {"id": request.order_id, "raffle_id": raffle_id}, {"_id": 0}
     )
 
     if not order:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
 
-    if order["status"] != "pending":
+    # Use `payment_status` (stored in payment_transactions) to match frontend
+    if order.get("payment_status") != "pending":
         raise HTTPException(status_code=400, detail="Esta orden ya fue procesada")
 
     if request.action == "approve":
@@ -695,11 +710,11 @@ async def validate_order(
             {"id": raffle_id}, {"$set": {"tickets": raffle["tickets"]}}
         )
 
-        await db.cash_orders.update_one(
+        await db.payment_transactions.update_one(
             {"id": request.order_id},
             {
                 "$set": {
-                    "status": "approved",
+                    "payment_status": "approved",
                     "approved_at": datetime.now(timezone.utc).isoformat(),
                 }
             },
@@ -729,11 +744,11 @@ async def validate_order(
             {"id": raffle_id}, {"$set": {"tickets": raffle["tickets"]}}
         )
 
-        await db.cash_orders.update_one(
+        await db.payment_transactions.update_one(
             {"id": request.order_id},
             {
                 "$set": {
-                    "status": "rejected",
+                    "payment_status": "rejected",
                     "rejected_at": datetime.now(timezone.utc).isoformat(),
                 }
             },

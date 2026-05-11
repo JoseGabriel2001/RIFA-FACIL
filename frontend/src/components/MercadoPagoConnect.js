@@ -62,7 +62,6 @@ const MercadoPagoConnect = ({ token }) => {
 
             // Redirect to MercadoPago authorization page
             window.location.href = authorization_url;
-            console.log('Redirecting to MercadoPago OAuth:', authorization_url);
 
         } catch (error) {
             console.error('Error initiating OAuth:', error);

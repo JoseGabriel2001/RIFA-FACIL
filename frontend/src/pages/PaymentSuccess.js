@@ -44,7 +44,6 @@ const PaymentSuccess = () => {
 
     try {
       const response = await axios.post(`${API}/payments/mercadopago/verify/${txnId}`);
-      
       if (response.data.status === 'paid') {
         setStatus('paid');
         toast.success('¡Pago completado exitosamente!');

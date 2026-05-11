@@ -37,8 +37,6 @@ import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
-const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID || '';
-const MERCADOPAGO_PUBLIC_KEY = process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY || '';
 
 const PublicRaffle = () => {
   const { shareCode } = useParams();
@@ -59,7 +57,6 @@ const PublicRaffle = () => {
   const fetchRaffle = useCallback(async () => {
     try {
       const response = await axios.get(`${API}/public/raffle/${shareCode}`);
-      console.log('Raffle data:', response.data);
       setRaffle(response.data);
     } catch (error) {
       toast.error('Rifa no encontrada');

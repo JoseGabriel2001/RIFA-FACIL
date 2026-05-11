@@ -20,6 +20,8 @@ const Pricing = () => {
       return;
     }
 
+    toast.info("Por el momento seguimos con el plan gratuito. ¡Pronto anunciaremos el lanzamiento del plan Premium con muchas funciones nuevas!");
+    return;
     try {
       await axios.post(`${API}/upgrade-plan`, {}, {
         headers: { Authorization: `Bearer ${token}` }

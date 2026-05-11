@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -27,6 +27,7 @@ const CreateRaffle = () => {
   const [drawDate, setDrawDate] = useState(null);
   const [spinsBeforeWinner, setSpinsBeforeWinner] = useState('3');
   const [prizeImage, setPrizeImage] = useState('');
+  const hasChecked = useRef(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -35,7 +36,25 @@ const CreateRaffle = () => {
     total_tickets: '',
     excluded_numbers: ''
   });
+  useEffect(() => {
+    if (hasChecked.current) return;
+    const check_connections = async () => {
+      try {
+        const response = await axios.get(`${API}/check_mp_connection`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.data.connected) {
+          toast.warning('No se pudo conectar con Mercado Pago. Por favor vincula tu cuenta en la sección de dashboard.');
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        toast.error('Error al cargar la página. Por favor intenta de nuevo.');
+        navigate('/dashboard');
+      }
+    }
 
+    check_connections();
+  }, [API, token, navigate]);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -43,7 +62,7 @@ const CreateRaffle = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title || !formData.prize || !formData.ticket_price || !formData.total_tickets || !drawDate) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
@@ -88,13 +107,13 @@ const CreateRaffle = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success('¡Rifa creada exitosamente!');
       navigate(`/manage-raffle/${response.data.id}`);
     } catch (error) {
       const message = error.response?.data?.detail || 'Error al crear la rifa';
       const status = error.response?.status;
-      
+
       if (status === 403) {
         // Plan limit reached
         toast.error(message, {
@@ -180,7 +199,7 @@ const CreateRaffle = () => {
               {/* Prize Image Upload */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  Imagen del premio
+                  Imagen del premio (opcional)
                 </Label>
                 <ImageUpload
                   value={prizeImage}

@@ -4,11 +4,13 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, X, Image, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const ImageUpload = ({ value, onChange, className }) => {
+  const { token } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value || null);
   const fileInputRef = useRef(null);
@@ -42,10 +44,10 @@ const ImageUpload = ({ value, onChange, className }) => {
       formData.append('file', file);
 
       const response = await axios.post(`${API}/upload-image`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
 
-      const imageUrl = `${BACKEND_URL}${response.data.image_url}`;
+      const imageUrl = `${BACKEND_URL}${response.data.url}`;
       setPreview(imageUrl);
       onChange(imageUrl);
       toast.success('Imagen subida correctamente');

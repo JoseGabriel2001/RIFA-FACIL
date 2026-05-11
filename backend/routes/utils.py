@@ -85,7 +85,7 @@ async def upload_image(
         
         return {
             "filename": unique_filename,
-            "url": f"/api/images/{unique_filename}"
+            "url": f"/uploads/{unique_filename}"
         }
         
     except Exception as e:
