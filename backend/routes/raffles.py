@@ -176,6 +176,9 @@ async def create_raffle(
                 status_code=403,
                 detail="Plan gratuito limitado a 2 rifas activas. Actualiza a Premium.",
             )
+    mp_connections = db.mp_oauth_credentials.find({"user_id": user["id"]}, {"_id": 0})
+    connections = await mp_connections.to_list(length=100)
+    visible = "public" if len(connections) > 0 else "private"
 
     # Create raffle document
     raffle_id = str(uuid.uuid4())
@@ -195,6 +198,7 @@ async def create_raffle(
         "tickets": create_tickets(
             raffle_data.total_tickets, raffle_data.excluded_numbers or []
         ),
+        "visible": visible,
         "draw_date": raffle_data.draw_date,
         "status": "active",
         "share_code": share_code,

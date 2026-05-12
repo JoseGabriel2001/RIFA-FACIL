@@ -27,7 +27,6 @@ const CreateRaffle = () => {
   const [drawDate, setDrawDate] = useState(null);
   const [spinsBeforeWinner, setSpinsBeforeWinner] = useState('3');
   const [prizeImage, setPrizeImage] = useState('');
-  const hasChecked = useRef(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,25 +35,7 @@ const CreateRaffle = () => {
     total_tickets: '',
     excluded_numbers: ''
   });
-  useEffect(() => {
-    if (hasChecked.current) return;
-    const check_connections = async () => {
-      try {
-        const response = await axios.get(`${API}/check_mp_connection`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.data.connected) {
-          toast.warning('No se pudo conectar con Mercado Pago. Por favor vincula tu cuenta en la sección de dashboard.');
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        toast.error('Error al cargar la página. Por favor intenta de nuevo.');
-        navigate('/dashboard');
-      }
-    }
 
-    check_connections();
-  }, [API, token, navigate]);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

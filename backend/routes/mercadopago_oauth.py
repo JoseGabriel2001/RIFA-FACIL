@@ -166,6 +166,12 @@ async def oauth_callback(
             {"id": user_id}, {"$set": {"mp_connected": True, "mp_user_id": mp_user_id}}
         )
 
+        # update raffles visibility to public
+        await db.raffles.update_many(
+            {"owner_id": user_id, "visible": "private"},
+            {"$set": {"visible": "public"}},
+        )
+
         # Clean up state
         await db.oauth_states.delete_one({"state": state})
 
@@ -242,6 +248,12 @@ async def disconnect_oauth(current_user: dict = Depends(get_current_user)):
         await db.users.update_one(
             {"id": current_user["id"]},
             {"$set": {"mp_connected": False, "mp_user_id": None}},
+        )
+
+        # update raffles visibility to private
+        await db.raffles.update_many(
+            {"owner_id": current_user["id"], "visible": "public"},
+            {"$set": {"visible": "private"}},
         )
 
         logger.info(f"User {current_user['id']} disconnected MercadoPago account")

@@ -33,7 +33,6 @@ import {
   CheckCircle,
   CreditCard
 } from 'lucide-react';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -178,6 +177,18 @@ const PublicRaffle = () => {
         <Card className="max-w-md">
           <CardContent className="py-12 text-center">
             <p className="text-slate-600">Rifa no encontrada</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (raffle.visible === 'private') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="py-12 text-center">
+            <p className="text-slate-600">Rifa no disponible</p>
           </CardContent>
         </Card>
       </div>

@@ -132,10 +132,10 @@ const MercadoPagoConnect = ({ token }) => {
                                         <p className="font-medium">¿Por qué conectar tu cuenta?</p>
                                         <ul className="list-disc list-inside space-y-1 text-blue-800">
                                             <li>Recibe pagos directamente en tu cuenta</li>
-                                            <li>La plataforma cobra una comisión automática del 10%</li>
                                             <li>No necesitas manejar dinero manualmente</li>
                                             <li>Tus clientes pagan con tarjeta, OXXO, SPEI, etc.</li>
                                         </ul>
+                                        <p className="font-medium">RifaFacil cobra una comisión automática del 10%</p>
                                     </div>
                                 </div>
                             </div>

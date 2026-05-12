@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -51,10 +51,33 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteRaffleId, setDeleteRaffleId] = useState(null);
+  const hasChecked = useRef(false);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
+
+    if (hasChecked.current) return;
+
+    const check_connections = async () => {
+      try {
+        const response = await axios.get(`${API}/check_mp_connection`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.data.connected) {
+          const msg = 'Favor de conectar tu cuenta de Mercado Pago para habilitar la venta de boletos. Mientras este proceso no se complete, sus clientes no podrán visualizar ni comprar boletos.';
+          setMessage(msg);
+          console.log(msg.length);
+        }
+      } catch (error) {
+        toast.error('Error al cargar la página. Por favor intenta de nuevo.');
+      }
+    }
+    check_connections();
+
     fetchData();
-  }, []);
+
+    hasChecked.current = true;
+  }, [API, token, navigate]);
 
   const fetchData = async () => {
     try {
@@ -200,6 +223,9 @@ const Dashboard = () => {
         {/* Raffles List */}
         <div>
           <h2 className="text-xl font-bold text-slate-900 mb-4">Mis Rifas</h2>
+          {message.length > 0 ? (<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-4" role="alert">
+            <p>{message}</p>
+          </div>) : null}
           {raffles.length === 0 ? (
             <Card className="border-0 shadow-sm" data-testid="no-raffles-card">
               <CardContent className="py-16 text-center">
