@@ -46,7 +46,8 @@ origins = [
     "http://localhost:3000",
     "https://rifa-facil-example-frontend.onrender.com",
     "https://rifa-facil-umkp.onrender.com",
-    "https://cc9d-2806-10ae-1d-f529-25f8-3548-8ba8-f3f6.ngrok-free.app"
+    "https://www.rifafacil.pro"
+    # "https://cc9d-2806-10ae-1d-f529-25f8-3548-8ba8-f3f6.ngrok-free.app"
 ]
 
 # =============================================================================
