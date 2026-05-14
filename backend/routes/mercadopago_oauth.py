@@ -76,8 +76,8 @@ async def initiate_oauth_flow(current_user: dict = Depends(get_current_user)):
 
 @router.get("/callback")
 async def oauth_callback(
-    code: str = Query(..., description="Authorization code from MercadoPago"),
-    state: str = Query(..., description="State parameter for validation"),
+    code: str | None = Query(None, description="Authorization code from MercadoPago"),
+    state: str | None = Query(None, description="State parameter for CSRF validation"),
     request: Request = None,
 ):
     """
@@ -101,7 +101,7 @@ async def oauth_callback(
         if not state_doc:
             logger.error(f"Invalid state parameter: {state}")
             return RedirectResponse(
-                url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=invalid_state"
+                url=f"{settings.FRONTEND_URL}/oauth-error?error=invalid_state"
             )
 
         user_id = state_doc["user_id"]
@@ -110,7 +110,7 @@ async def oauth_callback(
         if not code_verifier:
             logger.error(f"Missing code_verifier for state: {state}")
             return RedirectResponse(
-                url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=missing_verifier"
+                url=f"{settings.FRONTEND_URL}/oauth-error?error=missing_verifier"
             )
 
         # Exchange code for tokens with PKCE
@@ -178,18 +178,18 @@ async def oauth_callback(
         logger.info(f"OAuth successful for user {user_id}, MP user {mp_user_id}")
 
         # Redirect to frontend success page
-        frontend_url = request.headers.get("origin", settings.FRONTEND_URL)
+        frontend_url = settings.FRONTEND_URL
         return RedirectResponse(url=f"{frontend_url}/oauth-success")
 
     except ValueError as e:
         logger.error(f"OAuth callback validation error: {str(e)}")
         return RedirectResponse(
-            url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=validation_failed"
+            url=f"{settings.FRONTEND_URL}/oauth-error?error=validation_failed"
         )
     except Exception as e:
         logger.error(f"OAuth callback error: {str(e)}")
         return RedirectResponse(
-            url=f"{request.headers.get('origin', settings.FRONTEND_URL)}/oauth-error?error=unexpected_error"
+            url=f"{settings.FRONTEND_URL}/oauth-error?error=unexpected_error"
         )
 
 

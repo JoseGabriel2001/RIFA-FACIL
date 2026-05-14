@@ -13,6 +13,7 @@ import secrets
 from typing import Dict, Optional, Tuple
 from datetime import datetime, timedelta
 from config.settings import settings
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class MercadoPagoOAuthService:
             Tuple of (code_verifier, code_challenge)
         """
         # Generate a random code_verifier (128 characters, unreserved characters only)
-        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(96)).decode(
+        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(64)).decode(
             "utf-8"
         )
         code_verifier = code_verifier.rstrip("=")  # Remove padding
@@ -76,14 +77,13 @@ class MercadoPagoOAuthService:
         params = {
             "client_id": self.client_id,
             "response_type": "code",
-            "platform_id": "mp",
             "state": state,
             "redirect_uri": self.redirect_uri,
             "code_challenge": code_challenge,
             "code_challenge_method": "S256",
         }
 
-        query_string = "&".join(f"{k}={v}" for k, v in params.items())
+        query_string = urlencode(params)
         auth_url = f"{self.auth_url}?{query_string}"
 
         logger.info(

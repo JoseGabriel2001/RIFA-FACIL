@@ -22,6 +22,8 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
+from fastapi.staticfiles import StaticFiles
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +44,10 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 origins = [
+    "http://localhost:3000",
     "https://rifa-facil-umkp.onrender.com",
     "https://www.rifafacil.pro",
     "https://rifafacil.pro"

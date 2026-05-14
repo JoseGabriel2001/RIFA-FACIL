@@ -16,6 +16,7 @@ from typing import List
 import uuid
 import shutil
 import logging
+from fastapi.staticfiles import StaticFiles
 
 from config import db
 from config.settings import settings

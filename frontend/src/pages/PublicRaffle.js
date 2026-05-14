@@ -50,6 +50,7 @@ const PublicRaffle = () => {
     phone: ''
   });
   const [processing, setProcessing] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
 
 
@@ -67,6 +68,15 @@ const PublicRaffle = () => {
   useEffect(() => {
     fetchRaffle();
   }, [fetchRaffle]);
+
+  useEffect(() => {
+    if (!imageModalOpen) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setImageModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [imageModalOpen]);
 
   const handleTicketClick = (number) => {
     if (selectedTickets.includes(number)) {
@@ -215,7 +225,24 @@ const PublicRaffle = () => {
               <img
                 src={raffle.prize_image}
                 alt={raffle.prize}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105"
+                onClick={() => setImageModalOpen(true)}
+                role="button"
+                aria-label="Abrir imagen en pantalla completa"
+              />
+            </div>
+          )}
+
+          {imageModalOpen && raffle.prize_image && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+              onClick={() => setImageModalOpen(false)}
+            >
+              <img
+                src={raffle.prize_image}
+                alt={raffle.prize}
+                className="max-w-full max-h-full rounded shadow-lg"
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
           )}

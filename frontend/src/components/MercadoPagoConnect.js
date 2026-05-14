@@ -136,6 +136,7 @@ const MercadoPagoConnect = ({ token }) => {
                                             <li>Tus clientes pagan con tarjeta, OXXO, SPEI, etc.</li>
                                         </ul>
                                         <p className="font-medium">RifaFacil cobra una comisión automática del 10%</p>
+                                        <p>Para evitar problemas al conectar tu cuenta, inicia sesión en Mercado Pago antes de conectar y asegúrate de que tu cuenta esté completamente verificada.</p>
                                     </div>
                                 </div>
                             </div>
@@ -204,7 +205,7 @@ const MercadoPagoConnect = ({ token }) => {
                         <AlertDialogTitle>¿Desconectar cuenta de MercadoPago?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Si desconectas tu cuenta, no podrás recibir pagos en línea hasta que la vuelvas a conectar.
-                            Tus rifas actuales no se verán afectadas, pero los nuevos compradores no podrán pagar con tarjeta.
+                            Tus rifas actuales no se verán afectadas, pero los nuevos compradores no podrán pagar.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
