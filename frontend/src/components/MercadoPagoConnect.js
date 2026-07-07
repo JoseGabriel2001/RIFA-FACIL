@@ -135,7 +135,7 @@ const MercadoPagoConnect = ({ token }) => {
                                             <li>No necesitas manejar dinero manualmente</li>
                                             <li>Tus clientes pagan con tarjeta, OXXO, SPEI, etc.</li>
                                         </ul>
-                                        <p className="font-medium">RifaFácil aplica una comisión automática del **10%** sobre el monto recaudado. Adicionalmente, **Mercado Pago** cobra una comisión por cada transacción del **3.49% + $4.00 MXN**.
+                                        <p className="font-medium">RifaFácil aplica una comisión automática del 10% por cada boleto vendido. Adicionalmente, Mercado Pago cobra una comisión del 3.49% + $4.00 MXN.
                                         </p>
 
                                         <p>Para evitar problemas al conectar tu cuenta, inicia sesión en Mercado Pago antes de conectar y asegúrate de que tu cuenta esté completamente verificada.</p>
